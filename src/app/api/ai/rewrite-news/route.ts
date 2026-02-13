@@ -5,9 +5,7 @@ import { getSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import OpenAI from 'openai'
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-})
+
 
 export async function POST(request: Request) {
     try {
@@ -39,6 +37,10 @@ export async function POST(request: Request) {
         }
 
         // Use AI to analyze and rewrite
+        const openai = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY,
+        })
+
         const prompt = `You are a professional news editor. Analyze and rewrite the following news article for NewsBali, an investigative journalism platform focused on Bali.
 
 Original article URL: ${url}

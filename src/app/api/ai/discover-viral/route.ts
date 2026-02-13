@@ -5,9 +5,7 @@ import { getSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import OpenAI from 'openai'
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-})
+
 
 const CATEGORIES = ['TOURISM', 'INVESTMENT', 'INCIDENTS', 'LOCAL', 'JOBS', 'OPINION'] as const
 
@@ -23,6 +21,10 @@ export async function POST(request: Request) {
         const { category, autoPublish = true } = body
 
         console.log('[Viral News] Discovering trending news...')
+
+        const openai = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY,
+        })
 
         // Use AI to find trending topics and create article
         const selectedCategory = category || CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)]

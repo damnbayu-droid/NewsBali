@@ -2,9 +2,7 @@ import OpenAI from 'openai'
 import { db } from '@/lib/db'
 import { Category, RiskLevel, Verification, Status } from '@prisma/client'
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-})
+
 
 interface GeneratedArticle {
     title: string
@@ -98,6 +96,10 @@ Verification level guidelines:
 - HIGH: Investigative reports, major developments`
 
     try {
+        const openai = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY,
+        })
+
         const response = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
             messages: [
