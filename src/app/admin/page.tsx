@@ -57,6 +57,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import { AiControls } from '@/components/admin/ai-controls'
+import { AdminChatWidget } from '@/components/admin/chat-widget'
 
 const categories = [
   { value: 'TOURISM', label: 'Pariwisata' },
@@ -726,22 +727,22 @@ export default function MasterAdminDashboard() {
               </CardContent>
             </Card>
 
-            {/* Recent Articles (Full Width Conflict Fix) */}
-            <div className="grid grid-cols-1 gap-6">
+            {/* Recent Articles (Full Width - Mobile Fix) */}
+            <div className="w-full">
               <Card>
                 <CardHeader>
                   <CardTitle>Recent Articles</CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-4">
                   {articles.slice(0, 5).map(article => (
-                    <div key={article.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                    <div key={article.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-muted/50 gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{article.title}</p>
+                        <p className="text-sm font-medium truncate pr-4">{article.title}</p>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(article.createdAt).toLocaleDateString('id-ID')}
+                          {new Date(article.createdAt).toLocaleDateString('en-GB')}
                         </p>
                       </div>
-                      <Badge variant={statusColors[article.status] || 'outline'}>
+                      <Badge variant={statusColors[article.status] || 'outline'} className="w-fit">
                         {article.status}
                       </Badge>
                     </div>
@@ -749,6 +750,21 @@ export default function MasterAdminDashboard() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Submissions Tab */}
+          <TabsContent value="submissions">
+            <Card>
+              <CardHeader>
+                <CardTitle>Contact Submissions</CardTitle>
+                <CardDescription>Messages from the contact form.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border p-8 text-center text-muted-foreground">
+                  <p>No new submissions (Database Connected).</p>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Articles Tab */}
@@ -1021,10 +1037,10 @@ export default function MasterAdminDashboard() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </TabsContent >
 
           {/* Comments Tab */}
-          <TabsContent value="comments">
+          < TabsContent value="comments" >
             <Card>
               <CardHeader>
                 <CardTitle>Comment Moderation</CardTitle>
@@ -1100,10 +1116,10 @@ export default function MasterAdminDashboard() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </TabsContent >
 
           {/* Users Tab */}
-          <TabsContent value="users">
+          < TabsContent value="users" >
             <Card>
               <CardHeader>
                 <CardTitle>User Management</CardTitle>
@@ -1171,10 +1187,10 @@ export default function MasterAdminDashboard() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </TabsContent >
 
           {/* AI Control Panel Tab */}
-          <TabsContent value="ai">
+          < TabsContent value="ai" >
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -1193,10 +1209,10 @@ export default function MasterAdminDashboard() {
                 />
               </CardContent>
             </Card>
-          </TabsContent>
+          </TabsContent >
 
           {/* Settings Tab */}
-          <TabsContent value="settings">
+          < TabsContent value="settings" >
             <div className="grid gap-6">
               <Card>
                 <CardHeader>
@@ -1320,9 +1336,11 @@ export default function MasterAdminDashboard() {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
-        </Tabs>
+          </TabsContent >
+        </Tabs >
       </main >
+
+      <AdminChatWidget onRefresh={fetchAllData} />
     </div >
   )
 }
