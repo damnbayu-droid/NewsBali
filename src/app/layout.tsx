@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   keywords: ['Bali news', 'jurnalisme investigasi', 'berita Bali', 'pariwisata Bali', 'investasi Bali'],
   authors: [{ name: 'NewsBali Team' }],
   icons: {
-    icon: '/logo.svg',
+    icon: '/Logo.webp',
   },
   openGraph: {
     title: 'NewsBali Online',

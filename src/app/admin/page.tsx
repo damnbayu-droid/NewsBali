@@ -100,17 +100,31 @@ interface Article {
   featuredImageUrl: string | null
   featuredImageAlt: string | null
   imageSource: string | null
-  status: string
-  riskLevel: string
+  aiAssisted: boolean
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
   riskScore: number
   containsAccusation: boolean
-  legalReviewRequired: boolean
-  aiAssisted: boolean
+  verificationLevel: string
+  evidenceCount: number
+  status: 'DRAFT' | 'REVIEW' | 'PUBLISHED' | 'REJECTED'
   viewCount: number
   createdAt: string
-  author?: { name: string | null } | null
-  evidences: { id: string }[]
+  publishedAt: string | null
+  author: { name: string | null, email: string }
 }
+
+interface Report {
+  id: string
+  title: string
+  category: string
+  content: string
+  sourceContact: string | null
+  evidenceLinks: string | null
+  status: string
+  createdAt: string
+}
+
+
 
 interface Comment {
   id: string
@@ -137,6 +151,7 @@ export default function MasterAdminDashboard() {
 
   // Data states
   const [articles, setArticles] = useState<Article[]>([])
+  const [reports, setReports] = useState<Report[]>([])
   const [comments, setComments] = useState<Comment[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [stats, setStats] = useState({
@@ -209,46 +224,53 @@ export default function MasterAdminDashboard() {
   async function fetchAllData() {
     setLoading(true)
     try {
-      const [articlesRes, commentsRes, usersRes] = await Promise.all([
+      const [articlesRes, commentsRes, usersRes, reportsRes] = await Promise.all([
         fetch('/api/admin/articles'),
         fetch('/api/admin/comments'),
         fetch('/api/admin/users'),
+        fetch('/api/admin/reports'),
       ])
 
-      if (articlesRes.ok) {
-        const data = await articlesRes.json()
-        setArticles(data.articles || [])
-        setStats(prev => ({
-          ...prev,
-          totalArticles: data.articles?.length || 0,
-          publishedArticles: data.articles?.filter((a: Article) => a.status === 'PUBLISHED').length || 0,
-          highRiskArticles: data.articles?.filter((a: Article) => a.riskLevel === 'HIGH' || a.riskLevel === 'CRITICAL').length || 0,
-        }))
-      }
+      const articlesData = articlesRes.ok ? await articlesRes.json() : { articles: [] }
+      const commentsData = commentsRes.ok ? await commentsRes.json() : { comments: [] }
+      const usersData = usersRes.ok ? await usersRes.json() : { users: [] }
+      const reportsData = reportsRes.ok ? await reportsRes.json() : []
 
-      if (commentsRes.ok) {
-        const data = await commentsRes.json()
-        setComments(data.comments || [])
-        setStats(prev => ({
-          ...prev,
-          totalComments: data.comments?.length || 0,
-          pendingComments: data.comments?.filter((c: Comment) => c.status === 'PENDING').length || 0,
-        }))
-      }
+      if (Array.isArray(articlesData.articles)) setArticles(articlesData.articles)
+      if (Array.isArray(commentsData.comments)) setComments(commentsData.comments)
+      if (Array.isArray(usersData.users)) setUsers(usersData.users)
+      if (Array.isArray(reportsData)) setReports(reportsData)
 
-      if (usersRes.ok) {
-        const data = await usersRes.json()
-        setUsers(data.users || [])
-        setStats(prev => ({
-          ...prev,
-          totalUsers: data.users?.length || 0,
-        }))
-      }
+      // Calculate stats
+      setStats({
+        totalArticles: articlesData.articles?.length || 0,
+        publishedArticles: articlesData.articles?.filter((a: Article) => a.status === 'PUBLISHED').length || 0,
+        totalUsers: usersData.users?.length || 0,
+        totalComments: commentsData.comments?.length || 0,
+        pendingComments: commentsData.comments?.filter((c: Comment) => c.status === 'PENDING').length || 0,
+        highRiskArticles: articlesData.articles?.filter((a: Article) => ['HIGH', 'CRITICAL'].includes(a.riskLevel)).length || 0,
+      })
     } catch (err) {
-      setError('Failed to load data')
+      console.error('Error fetching data:', err)
+      setError('Failed to load dashboard data')
     } finally {
       setLoading(false)
     }
+  }
+
+  function resetArticleForm() {
+    setArticleForm({
+      title: '',
+      excerpt: '',
+      content: '',
+      category: '',
+      featuredImageUrl: '',
+      featuredImageAlt: '',
+      imageSource: '',
+      status: 'DRAFT',
+    })
+    setRiskAnalysis(null)
+    setAnalyzingRisk(false)
   }
 
   async function handleCreateArticle(e: React.FormEvent) {
@@ -500,131 +522,98 @@ export default function MasterAdminDashboard() {
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Users</span>
             </TabsTrigger>
-            <TabsTrigger value="ai" className="flex items-center gap-2">
+            <TabsTrigger value="ai" className="gap-2">
               <Sparkles className="h-4 w-4" />
-              <span className="hidden sm:inline">AI</span>
+              AI Console
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
+            <TabsTrigger value="reports" className="gap-2">
+              <FileText className="h-4 w-4" />
+              Reports
+              {reports.filter(r => r.status === 'PENDING').length > 0 && (
+                <Badge variant="destructive" className="ml-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]">
+                  {reports.filter(r => r.status === 'PENDING').length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="gap-2">
               <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Settings</span>
+              Settings
             </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
-          <TabsContent value="overview">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+          <TabsContent value="overview" className="space-y-6">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold">{stats.totalArticles}</p>
-                      <p className="text-xs text-muted-foreground">Total Articles</p>
-                    </div>
-                    <FileText className="h-8 w-8 text-muted-foreground" />
-                  </div>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Articles</CardTitle>
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.totalArticles}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {stats.publishedArticles} published
+                  </p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold">{stats.publishedArticles}</p>
-                      <p className="text-xs text-muted-foreground">Published</p>
-                    </div>
-                    <CheckCircle className="h-8 w-8 text-green-500" />
-                  </div>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.totalUsers}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Registered accounts
+                  </p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold">{stats.highRiskArticles}</p>
-                      <p className="text-xs text-muted-foreground">High Risk</p>
-                    </div>
-                    <AlertTriangle className="h-8 w-8 text-orange-500" />
-                  </div>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Pending Comments</CardTitle>
+                  <MessageCircle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.pendingComments}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {stats.totalComments} total comments
+                  </p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold">{stats.totalUsers}</p>
-                      <p className="text-xs text-muted-foreground">Users</p>
-                    </div>
-                    <Users className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold">{stats.totalComments}</p>
-                      <p className="text-xs text-muted-foreground">Comments</p>
-                    </div>
-                    <MessageCircle className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold">{stats.pendingComments}</p>
-                      <p className="text-xs text-muted-foreground">Pending</p>
-                    </div>
-                    <Shield className="h-8 w-8 text-yellow-500" />
-                  </div>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Public Reports</CardTitle>
+                  <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{reports.length}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {reports.filter(r => r.status === 'PENDING').length} pending review
+                  </p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Quick Actions */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
-                  <CardDescription>Common administrative tasks</CardDescription>
+                  <CardTitle>Recent Articles</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button className="w-full justify-start" onClick={() => { resetArticleForm(); setEditingArticle(null); setShowArticleDialog(true); }}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create New Article
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('comments')}>
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Moderate Comments ({stats.pendingComments} pending)
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start" onClick={() => setActiveTab('users')}>
-                    <Users className="h-4 w-4 mr-2" />
-                    Manage Users
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                  <CardDescription>Latest articles and comments</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {articles.slice(0, 5).map(article => (
-                      <div key={article.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{article.title}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(article.createdAt).toLocaleDateString('id-ID')}
-                          </p>
-                        </div>
-                        <Badge variant={statusColors[article.status] || 'outline'}>
-                          {article.status}
-                        </Badge>
+                <CardContent className="grid gap-4">
+                  {articles.slice(0, 5).map(article => (
+                    <div key={article.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{article.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(article.createdAt).toLocaleDateString('id-ID')}
+                        </p>
                       </div>
-                    ))}
-                  </div>
+                      <Badge variant={statusColors[article.status] || 'outline'}>
+                        {article.status}
+                      </Badge>
+                    </div>
+                  ))}
                 </CardContent>
               </Card>
             </div>

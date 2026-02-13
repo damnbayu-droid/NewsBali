@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Loader2, Sparkles, Activity, Brain } from 'lucide-react'
+import { Loader2, Sparkles, Activity, Brain, FileText, Zap } from 'lucide-react'
 import {
     Select,
     SelectContent,
@@ -24,6 +25,7 @@ export function AiControls({ onSuccess, onError, onRefresh }: AiControlsProps) {
     const [articleCount, setArticleCount] = useState('3')
     const [viralCategory, setViralCategory] = useState('random')
     const [rewriteUrl, setRewriteUrl] = useState('')
+    const [rawData, setRawData] = useState('')
 
     // Auto-publish state
     const [autoPublish, setAutoPublish] = useState(false)
@@ -156,6 +158,33 @@ export function AiControls({ onSuccess, onError, onRefresh }: AiControlsProps) {
         }
     }
 
+    const handleProcessRawData = async () => {
+        if (!rawData) return
+        setLoading(true)
+        try {
+            const res = await fetch('/api/ai/process-raw-data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    content: rawData,
+                    autoPublish
+                })
+            })
+            const data = await res.json()
+            if (res.ok) {
+                onSuccess(`✅ Raw data processed into article: "${data.article.title}"`)
+                onRefresh()
+                setRawData('')
+            } else {
+                onError(data.error || 'Failed to process raw data')
+            }
+        } catch (err) {
+            onError('Failed to process data')
+        } finally {
+            setLoading(false)
+        }
+    }
+
     // Live Activity Log State
     const [logs, setLogs] = useState<any[]>([])
     const [refreshingLogs, setRefreshingLogs] = useState(false)
@@ -270,6 +299,35 @@ export function AiControls({ onSuccess, onError, onRefresh }: AiControlsProps) {
                 </div>
             </div>
 
+            {/* Raw Data Processor */}
+            <div className="border-t pt-4 space-y-3">
+                <h4 className="font-semibold text-sm flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Process Raw Data (5W1H)
+                </h4>
+                <div className="space-y-2">
+                    <Label htmlFor="raw-data" className="text-xs text-muted-foreground">
+                        Paste press release, notes, or raw event data here. AI will structure it into a news article.
+                    </Label>
+                    <div className="flex gap-4 items-start">
+                        <Textarea
+                            id="raw-data"
+                            placeholder="Who, What, When, Where, Why, How..."
+                            value={rawData}
+                            onChange={(e) => setRawData(e.target.value)}
+                            className="min-h-[100px] flex-1"
+                        />
+                        <Button
+                            onClick={handleProcessRawData}
+                            disabled={loading || !rawData}
+                            className="h-auto py-4"
+                        >
+                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
             {/* Rewriter */}
             <div className="border-t pt-4 space-y-3">
                 <h4 className="font-semibold text-sm flex items-center gap-2">
@@ -319,6 +377,7 @@ export function AiControls({ onSuccess, onError, onRefresh }: AiControlsProps) {
                                     {log.action === 'discover-viral' && `Discovered viral topic: ${log.metadata?.trendingTopic || 'Unknown'}`}
                                     {log.action === 'rewrite' && `Rewrote article from: ${log.metadata?.sourceUrl || 'URL'}`}
                                     {log.action === 'generate' && `Generated ${log.category} article`}
+                                    {log.action === 'process-raw-data' && `Processed raw data into article`}
                                 </span>
                             </div>
                         ))

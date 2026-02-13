@@ -57,6 +57,25 @@ export default function SubmitReportPage() {
         throw new Error(data.error || 'Failed to submit report')
       }
 
+      // Also forward to Formspree as requested
+      try {
+        await fetch('https://formspree.io/f/mzdaeqda', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subject: `New Report: ${formData.title}`,
+            category: formData.category,
+            message: formData.content,
+            contact: formData.sourceContact,
+            links: formData.evidenceLinks,
+            _replyto: formData.sourceContact // if it's an email
+          }),
+        })
+      } catch (formspreeError) {
+        console.error('Formspree forwarding failed', formspreeError)
+        // We don't block success if DB save worked, just log it
+      }
+
       setSuccess(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')

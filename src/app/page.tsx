@@ -22,7 +22,7 @@ async function getLatestArticles() {
 
 async function getFeaturedArticle() {
   return db.article.findFirst({
-    where: { 
+    where: {
       status: 'PUBLISHED',
       riskLevel: { not: 'CRITICAL' }
     },
@@ -38,7 +38,7 @@ async function getFeaturedArticle() {
 
 async function getArticlesByCategory(category: string) {
   return db.article.findMany({
-    where: { 
+    where: {
       status: 'PUBLISHED',
       category: category as any,
     },
@@ -50,13 +50,20 @@ async function getArticlesByCategory(category: string) {
   })
 }
 
+async function getPublishedCount() {
+  return db.article.count({
+    where: { status: 'PUBLISHED' }
+  })
+}
+
 export default async function HomePage() {
-  const [latestArticles, featuredArticle, tourismArticles, investmentArticles, incidentArticles] = await Promise.all([
+  const [latestArticles, featuredArticle, tourismArticles, investmentArticles, incidentArticles, totalPublished] = await Promise.all([
     getLatestArticles(),
     getFeaturedArticle(),
     getArticlesByCategory('TOURISM'),
     getArticlesByCategory('INVESTMENT'),
     getArticlesByCategory('INCIDENTS'),
+    getPublishedCount(),
   ])
 
   return (
@@ -179,7 +186,7 @@ export default async function HomePage() {
             <div className="flex items-center gap-3 p-4 rounded-lg bg-background/50">
               <FileText className="h-8 w-8 text-primary" />
               <div>
-                <p className="text-2xl font-bold">{latestArticles.length}+</p>
+                <p className="text-2xl font-bold">{totalPublished}+</p>
                 <p className="text-sm text-muted-foreground">Published Articles</p>
               </div>
             </div>

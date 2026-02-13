@@ -218,3 +218,18 @@ model Session {
   
   @@map("sessions")
 }
+
+// Reports from Public
+model Report {
+  id            String   @id @default(cuid())
+  title         String
+  category      String
+  content       String
+  sourceContact String?
+  evidenceLinks String?  // JSON string or comma-separated
+  status        String   @default("PENDING") // PENDING, REVIEWED, ARCHIVED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("reports")
+}
