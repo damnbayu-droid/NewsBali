@@ -1,4 +1,4 @@
-import zAiWeb from 'z-ai-web-dev-sdk'
+import { getZaiClient } from './zAiClient'
 
 interface LegalRiskResult {
   riskScore: number // 0-100
@@ -17,7 +17,8 @@ interface LegalRiskResult {
 
 export async function analyzeLegalRisk(content: string, title: string): Promise<LegalRiskResult> {
   try {
-    const response = await zAiWeb.llm.chat({
+    const zai = await getZaiClient()
+    const response = await zai.chat.completions.create({
       messages: [
         {
           role: 'system',

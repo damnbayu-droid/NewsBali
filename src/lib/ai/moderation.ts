@@ -1,4 +1,4 @@
-import zAiWeb from 'z-ai-web-dev-sdk'
+import { getZaiClient } from './zAiClient'
 
 interface ModerationResult {
   flagged: boolean
@@ -18,7 +18,8 @@ interface ModerationResult {
 export async function moderateContent(content: string): Promise<ModerationResult> {
   try {
     // Use LLM for moderation analysis
-    const response = await zAiWeb.llm.chat({
+    const zai = await getZaiClient()
+    const response = await zai.chat.completions.create({
       messages: [
         {
           role: 'system',

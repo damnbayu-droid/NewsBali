@@ -1,4 +1,4 @@
-import { zAiWeb } from 'z-ai-web-dev-sdk'
+import { getZaiClient } from './zAiClient'
 
 interface ToneAnalysis {
   isNeutral: boolean
@@ -10,7 +10,8 @@ interface ToneAnalysis {
 
 export async function analyzeTone(content: string): Promise<ToneAnalysis> {
   try {
-    const response = await zAiWeb.llm.chat({
+    const zai = await getZaiClient()
+    const response = await zai.chat.completions.create({
       messages: [
         {
           role: 'system',
@@ -46,7 +47,7 @@ Respond with a JSON object containing:
     })
 
     const result = JSON.parse(response.choices[0].message.content)
-    
+
     return {
       isNeutral: result.isNeutral ?? true,
       emotionalWords: result.emotionalWords || [],
@@ -67,7 +68,8 @@ Respond with a JSON object containing:
 
 export async function suggestNeutralRewrite(content: string): Promise<string> {
   try {
-    const response = await zAiWeb.llm.chat({
+    const zai = await getZaiClient()
+    const response = await zai.chat.completions.create({
       messages: [
         {
           role: 'system',
