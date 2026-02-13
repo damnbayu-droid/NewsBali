@@ -24,15 +24,45 @@ export async function POST(request: Request) {
         console.log(`Rewriting news from: ${url}`)
 
         // Fetch the original content (simplified - in production use a proper scraper)
+        // Fetch the original content with timeout and headers
         let originalContent = ''
         try {
-            const response = await fetch(url)
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout
+
+            const response = await fetch(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.5',
+                },
+                signal: controller.signal
+            })
+            clearTimeout(timeoutId)
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch URL: ${response.status} ${response.statusText}`)
+            }
+
             const html = await response.text()
-            // Very basic extraction - just get text content
-            originalContent = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 5000)
+
+            // Better text extraction
+            // 1. Remove scripts and styles
+            const noScript = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gmi, ' ')
+                .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gmi, ' ')
+                .replace(/<[^>]+>/g, ' ') // Remove tags
+
+            // 2. Clean whitespace
+            originalContent = noScript.replace(/\s+/g, ' ').trim().substring(0, 15000) // Increase limit for better context
+
+            if (originalContent.length < 100) {
+                throw new Error('Could not extract enough content from URL')
+            }
         } catch (error) {
             console.error('Error fetching URL:', error)
-            return NextResponse.json({ error: 'Failed to fetch URL content' }, { status: 400 })
+            return NextResponse.json({
+                error: 'Failed to fetch URL content. The site might block bots or the URL is invalid.'
+            }, { status: 400 })
         }
 
         // Use AI to analyze and rewrite

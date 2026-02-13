@@ -18,6 +18,7 @@ export async function POST(request: Request) {
         // Get count from request body
         const body = await request.json()
         const count = body.count || 3
+        const autoPublish = body.autoPublish || false
 
         if (count < 1 || count > 10) {
             return NextResponse.json(
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
         console.log(`Generating ${count} news articles...`)
 
         // Generate articles
-        const articles = await generateNewsArticles(count, user.id)
+        const articles = await generateNewsArticles(count, user.id, autoPublish ? 'PUBLISHED' : 'DRAFT')
 
         return NextResponse.json({
             success: true,

@@ -40,12 +40,12 @@ Category guidelines:
 - JOBS: Employment opportunities, job fairs, training programs
 - OPINION: Expert commentary, cultural analysis, social issues
 
-IMPORTANT: Make this seem like real news happening NOW in Bali. Use:
-- Recent dates (this week/month)
-- Real Bali locations (Denpasar, Ubud, Sanur, Seminyak, Canggu, etc.)
-- Realistic Indonesian names for sources
-- Believable statistics and numbers
-- Proper journalistic attribution
+IMPORTANT: Make this seem like real, breaking news happening NOW in Bali. 
+- Use specific, real locations (e.g., "Jalan Legian in Kuta", "Sanur Beach near Grand Hyatt", "Besakih Temple")
+- Include realistic Indonesian names for spokespeople (e.g., "Wayan Suryana", "Made Wijaya")
+- Cite plausible organizations (e.g., "Bali Tourism Board", "Denpasar Police", "BMKG")
+- Avoid generic phrases like "bustling streets" or "paradise island"
+- Focus on concrete events: road closures, new regulations, specific business openings, local ceremonies
 
 Return JSON with:
 {
@@ -102,9 +102,9 @@ Return JSON with:
                 excerpt: result.excerpt,
                 content: result.content,
                 category: selectedCategory,
-                featuredImageUrl: `https://images.unsplash.com/photo-${Math.floor(Math.random() * 9999999999)}?w=1200`,
+                featuredImageUrl: `https://image.pollinations.ai/prompt/${encodeURIComponent(result.title + ' Bali news realistic')}?width=1200&height=800&nologo=true`,
                 featuredImageAlt: result.title,
-                imageSource: 'Unsplash',
+                imageSource: 'AI Generated',
                 aiAssisted: true,
                 riskLevel: result.riskLevel || 'LOW',
                 riskScore: result.riskLevel === 'HIGH' ? 70 : result.riskLevel === 'MEDIUM' ? 40 : 15,

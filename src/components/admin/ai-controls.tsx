@@ -71,12 +71,21 @@ export function AiControls({ onSuccess, onError, onRefresh }: AiControlsProps) {
     }
 
     const handleGenerate = async () => {
+        const count = parseInt(articleCount)
+        if (isNaN(count) || count < 1) {
+            onError('Please enter a valid number of articles (1-10)')
+            return
+        }
+
         setLoading(true)
         try {
             const res = await fetch('/api/ai/generate-news', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ count: parseInt(articleCount) })
+                body: JSON.stringify({
+                    count,
+                    autoPublish // Use the state variable
+                })
             })
             const data = await res.json()
             if (res.ok) {
@@ -100,12 +109,12 @@ export function AiControls({ onSuccess, onError, onRefresh }: AiControlsProps) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     category: viralCategory === 'random' ? null : viralCategory,
-                    autoPublish: true
+                    autoPublish // Use the state variable instead of hardcoded true
                 })
             })
             const data = await res.json()
             if (res.ok) {
-                onSuccess(`🔥 Discovered and published: "${data.article.title}"!`)
+                onSuccess(`🔥 Discovered and created: "${data.article.title}"!`)
                 onRefresh()
             } else {
                 onError(data.error || 'Failed to discover viral news')
@@ -127,11 +136,14 @@ export function AiControls({ onSuccess, onError, onRefresh }: AiControlsProps) {
             const res = await fetch('/api/ai/rewrite-news', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: rewriteUrl, autoPublish: false })
+                body: JSON.stringify({
+                    url: rewriteUrl,
+                    autoPublish // Use the state variable
+                })
             })
             const data = await res.json()
             if (res.ok) {
-                onSuccess(`✅ Article rewritten successfully! Check drafts.`)
+                onSuccess(`✅ Article rewritten successfully!`)
                 onRefresh()
                 setRewriteUrl('')
             } else {

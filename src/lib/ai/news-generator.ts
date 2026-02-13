@@ -162,9 +162,10 @@ export async function generateNewsArticles(count: number = 3, authorId: string, 
                     excerpt: generated.excerpt,
                     content: generated.content,
                     category,
-                    featuredImageUrl: `https://images.unsplash.com/photo-${Math.floor(Math.random() * 9999999999)}?w=1200`,
-                    featuredImageAlt: `Image for ${generated.title}`,
-                    imageSource: 'Unsplash',
+                    // Use Pollinations AI for reliable image generation based on title
+                    featuredImageUrl: `https://image.pollinations.ai/prompt/${encodeURIComponent(generated.title + ' Bali news realistic')}?width=1200&height=800&nologo=true`,
+                    featuredImageAlt: generated.title,
+                    imageSource: 'AI Generated',
                     aiAssisted: true, // Mark as AI-generated
                     riskLevel: generated.riskLevel,
                     riskScore: generated.riskLevel === 'HIGH' ? 70 : generated.riskLevel === 'MEDIUM' ? 40 : 15,
