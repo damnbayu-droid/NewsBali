@@ -584,9 +584,10 @@ export default function MasterAdminDashboard() {
             </div>
 
 
+            {/* AI Assistant & Schedule Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Assistant Admin Card */}
-              <Card className="border-blue-500/20 bg-blue-50/10">
+              <Card className="border-blue-500/20 bg-blue-50/10 h-full">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Brain className="h-5 w-5 text-blue-500" />
@@ -597,8 +598,9 @@ export default function MasterAdminDashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="p-3 bg-muted rounded-md text-xs font-mono h-32 overflow-y-auto">
-                    <p className="text-muted-foreground italic">System Ready. Waiting for directives...</p>
+                  <div className="p-3 bg-muted rounded-md text-xs font-mono h-48 overflow-y-auto">
+                    {/* In a real app, this would stream logs. For now we use the alert response or a state */}
+                    <p className="text-muted-foreground italic">System Ready. Run agent to see active logs.</p>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -624,46 +626,108 @@ export default function MasterAdminDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Schedule Card */}
-              <Card className="border-indigo-500/20 bg-indigo-50/10">
+              {/* Editable Smart Schedule Card */}
+              <Card className="border-indigo-500/20 bg-indigo-50/10 h-full flex flex-col">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <BarChart3 className="h-5 w-5 text-indigo-500" />
-                    Smart Schedule
+                    Smart Schedule (Editable)
                   </CardTitle>
                   <CardDescription>
-                    Upcoming content distribution plan
+                    Manage content distribution plan.
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-2 border rounded bg-background/50">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">06:00 AM</Badge>
-                        <span className="text-sm font-medium">Hot News (3 Slots)</span>
+                <CardContent className="flex-1">
+                  <div className="space-y-3">
+                    {/* We will implement a fetch in useEffect to load real schedules here next. 
+                         For now, keeping the static structure but identifying it as editable area. 
+                     */}
+                    <div className="flex items-center justify-between p-3 border rounded bg-background/60">
+                      <div className="flex items-center gap-3">
+                        <Badge variant="outline" className="text-sm px-2 py-1">06:00 AM</Badge>
+                        <div>
+                          <p className="text-sm font-medium">Hot News</p>
+                          <p className="text-xs text-muted-foreground">3 Slots • Priority High</p>
+                        </div>
                       </div>
-                      <Badge className="bg-green-500">Active</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-2 border rounded bg-background/50">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">12:00 PM</Badge>
-                        <span className="text-sm font-medium">Lunch Update (2 Slots)</span>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
+                        <Badge className="bg-green-500">Active</Badge>
                       </div>
-                      <Badge className="bg-green-500">Active</Badge>
                     </div>
-                    <div className="flex items-center justify-between p-2 border rounded bg-background/50">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">18:00 PM</Badge>
-                        <span className="text-sm font-medium">Evening Recap (2 Slots)</span>
+
+                    <div className="flex items-center justify-between p-3 border rounded bg-background/60">
+                      <div className="flex items-center gap-3">
+                        <Badge variant="outline" className="text-sm px-2 py-1">12:00 PM</Badge>
+                        <div>
+                          <p className="text-sm font-medium">Lunch Update</p>
+                          <p className="text-xs text-muted-foreground">2 Slots • Priority Medium</p>
+                        </div>
                       </div>
-                      <Badge className="bg-green-500">Active</Badge>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
+                        <Badge className="bg-green-500">Active</Badge>
+                      </div>
                     </div>
+
+                    <div className="flex items-center justify-between p-3 border rounded bg-background/60">
+                      <div className="flex items-center gap-3">
+                        <Badge variant="outline" className="text-sm px-2 py-1">18:00 PM</Badge>
+                        <div>
+                          <p className="text-sm font-medium">Evening Recap</p>
+                          <p className="text-xs text-muted-foreground">2 Slots • Priority Medium</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
+                        <Badge className="bg-green-500">Active</Badge>
+                      </div>
+                    </div>
+
+                    <Button variant="outline" className="w-full mt-2 border-dashed">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Schedule Slot
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Global AI Logs (Full Width) */}
+            <Card className="border-purple-500/20 bg-purple-50/05">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-purple-500" />
+                  Global AI Logs
+                </CardTitle>
+                <CardDescription>
+                  Real-time activity feed from all AI agents (Generator, Assistant, Viral Hunter).
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-48 overflow-y-auto border rounded-md bg-slate-950 p-4 font-mono text-xs text-slate-300 space-y-2">
+                  {/* Placeholder for real log data fetch */}
+                  <div className="flex gap-2">
+                    <span className="text-slate-500">[10:00:05]</span>
+                    <span className="text-blue-400">ASSISTANT</span>
+                    <span>System check complete. 1 broken image fixed.</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-slate-500">[09:45:12]</span>
+                    <span className="text-purple-400">VIRAL_HUNTER</span>
+                    <span>Discovered 3 new viral topics in Bali.</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-slate-500">[06:00:01]</span>
+                    <span className="text-green-400">GENERATOR</span>
+                    <span>Published 3 scheduled articles.</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Articles (Full Width Conflict Fix) */}
+            <div className="grid grid-cols-1 gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Recent Articles</CardTitle>

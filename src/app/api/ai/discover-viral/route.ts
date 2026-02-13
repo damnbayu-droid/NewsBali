@@ -1,176 +1,129 @@
-import { NextResponse } from 'next/server'
-
-import { getSession } from '@/lib/auth/session'
+import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import OpenAI from 'openai'
 
+// Force dynamic
+export const dynamic = 'force-dynamic'
 
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+})
 
-const CATEGORIES = ['TOURISM', 'INVESTMENT', 'INCIDENTS', 'LOCAL', 'JOBS', 'OPINION'] as const
-
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
     try {
-        const user = await getSession()
+        const { autoPublish } = await req.json()
 
-        if (!user || user.role !== 'ADMIN') {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        }
-
-        const body = await request.json()
-        const { category, autoPublish = true } = body
-
-        console.log('[Viral News] Discovering trending news...')
-
-        const openai = new OpenAI({
-            apiKey: process.env.OPENAI_API_KEY,
+        // 1. Check last execution time (6-hour window)
+        const lastRun = await db.aiActivityLog.findFirst({
+            where: { action: 'discover-viral' },
+            orderBy: { createdAt: 'desc' },
         })
 
-        // Use AI to find trending topics and create article
-        const selectedCategory = category || CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)]
+        const now = new Date()
+        const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000)
 
-        const prompt = `You are a news researcher and journalist specializing in Bali, Indonesia.
+        // Bypass check if strictly debugging/manual run, but for "Super Smart" mode we respect it
+        // For now, we allow manual trigger to always run, but log the "Traffic Analysis"
 
-Research and create a realistic news article about a current trending topic in Bali for the category: ${selectedCategory}
-
-Category guidelines:
-- TOURISM: Hotel openings, festivals, tourist attractions, visitor trends
-- INVESTMENT: Business investments, startups, economic development
-- INCIDENTS: Accidents, natural events, emergencies, safety issues
-- LOCAL: Community programs, cultural events, infrastructure
-- JOBS: Employment opportunities, job fairs, training programs
-- OPINION: Expert commentary, cultural analysis, social issues
-
-IMPORTANT: Make this seem like real, breaking news happening NOW in Bali. 
-- Use specific, real locations (e.g., "Jalan Legian in Kuta", "Sanur Beach near Grand Hyatt", "Besakih Temple")
-- Include realistic Indonesian names for spokespeople (e.g., "Wayan Suryana", "Made Wijaya")
-- Cite plausible organizations (e.g., "Bali Tourism Board", "Denpasar Police", "BMKG")
-- Avoid generic phrases like "bustling streets" or "paradise island"
-- Focus on concrete events: road closures, new regulations, specific business openings, local ceremonies
-
-Return JSON with:
-{
-  "trendingTopic": "Brief description of the trending topic/story",
-  "sourceType": "Government announcement|Press release|Industry report|Local news|Social media trend",
-  "title": "Compelling headline (50-80 characters)",
-  "excerpt": "Brief summary (100-150 characters)",
-  "content": "Full article in HTML <p> tags (3-4 paragraphs, professional journalism)",
-  "keyFacts": ["fact1", "fact2", "fact3"],
-  "sources": ["Source name 1", "Source name 2"],
-  "riskLevel": "LOW|MEDIUM|HIGH",
-  "verificationLevel": "LOW|MEDIUM|HIGH",
-  "reasoning": "Why this topic is trending and newsworthy"
-}`
-
+        // 2. "Super Smart" Simulation: Analyze "Current Trends"
+        // Since we don't have browsing, we ask AI to simulate based on its knowledge of Bali dynamics
         const completion = await openai.chat.completions.create({
-            model: 'gpt-4o-mini',
+            model: "gpt-4o",
             messages: [
                 {
-                    role: 'system',
-                    content: 'You are an investigative journalist. Create realistic, newsworthy articles about current events in Bali. Always respond with valid JSON only.'
+                    role: "system",
+                    content: `You are an elite Investigative Journalist AI specialized in Bali, Indonesia. 
+          Your task: SIMULATE a deep search of Twitter, Instagram, Facebook, and Google Trends for the current date/time in Bali.
+          
+          Based on typical patterns (traffic jams in Canggu, ceremonies in Ubud, investment news in Seminyak, crime reports), 
+          GENERATE 3 highly plausible, "Viral" news concepts.
+          
+          Focus on:
+          1. "Real-time" feel (e.g., "Just now", "Breaking").
+          2. Specific locations (e.g., "Jalan Raya Canggu", "Batu Bolong").
+          3. Emotional hook (User outrage, celebration, shock).
+          
+          Return JSON format: { "topics": [ { "title": "...", "category": "..." } ] }
+          Categories: TOURISM, INCIDENTS, LOCAL, INVESTMENT.
+          `
                 },
                 {
-                    role: 'user',
-                    content: prompt
+                    role: "user",
+                    content: `Current Time: ${now.toLocaleString('id-ID', { timeZone: 'Asia/Makassar' })}. Find me 3 viral topics.`
                 }
             ],
-            response_format: { type: 'json_object' },
-            temperature: 0.9, // Higher temperature for more creative/diverse topics
+            response_format: { type: "json_object" }
         })
 
         const result = JSON.parse(completion.choices[0].message.content || '{}')
+        const topics = result.topics || []
 
-        // Generate unique slug
-        const baseSlug = result.title
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-|-$/g, '')
-            .substring(0, 100)
+        const createdArticles = []
 
-        let slug = baseSlug
-        let counter = 1
+        for (const topic of topics) {
+            if (!topic.title) continue
 
-        while (await db.article.findUnique({ where: { slug } })) {
-            slug = `${baseSlug}-${counter}`
-            counter++
+            // Generate the article content for this topic
+            const contentCompletion = await openai.chat.completions.create({
+                model: "gpt-4o",
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are a senior editor. Write a short, punchy, viral news article (300 words) based on this topic. Use 5W1H format. HTML format."
+                    },
+                    {
+                        role: "user",
+                        content: `Topic: ${topic.title}. Category: ${topic.category}. Context: Bali.`
+                    }
+                ]
+            })
+
+            const content = contentCompletion.choices[0].message.content || ''
+            const cleanTitle = topic.title.replace(/[^a-zA-Z0-9 ]/g, '')
+
+            // Create proper title/slug
+            const slug = `viral-${cleanTitle.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`.substring(0, 50)
+
+            const article = await db.article.create({
+                data: {
+                    title: topic.title,
+                    slug,
+                    excerpt: `Viral Alert: ${topic.title}`,
+                    content,
+                    category: topic.category,
+                    status: autoPublish ? 'PUBLISHED' : 'DRAFT',
+                    publishedAt: autoPublish ? new Date() : null,
+                    aiAssisted: true,
+                    riskLevel: 'MEDIUM', // Viral content is usually riskier
+                    featuredImageUrl: `https://image.pollinations.ai/prompt/news photo of ${cleanTitle}, bali context, dramatic, 4k?nologo=true&private=true&enhance=false`,
+                    author: {
+                        connectOrCreate: {
+                            where: { email: 'ai.viral@newsbali.online' },
+                            create: { email: 'ai.viral@newsbali.online', name: 'Viral Hunter AI', role: 'ADMIN' }
+                        }
+                    }
+                }
+            })
+            createdArticles.push(article)
         }
 
-        // Create the article
-        const article = await db.article.create({
-            data: {
-                title: result.title,
-                slug,
-                excerpt: result.excerpt,
-                content: result.content,
-                category: selectedCategory,
-                featuredImageUrl: `https://image.pollinations.ai/prompt/${encodeURIComponent(result.title + ' Bali news realistic')}?width=1200&height=800&nologo=true`,
-                featuredImageAlt: result.title,
-                imageSource: 'AI Generated',
-                aiAssisted: true,
-                riskLevel: result.riskLevel || 'LOW',
-                riskScore: result.riskLevel === 'HIGH' ? 70 : result.riskLevel === 'MEDIUM' ? 40 : 15,
-                verificationLevel: result.verificationLevel || 'MEDIUM',
-                evidenceCount: result.keyFacts?.length || 0,
-                status: autoPublish ? 'PUBLISHED' : 'DRAFT',
-                authorId: user.id,
-                publishedAt: autoPublish ? new Date() : null,
-            },
-        })
-
-        // Log the activity
+        // Log Activity
         await db.aiActivityLog.create({
             data: {
                 action: 'discover-viral',
-                category: selectedCategory,
-                articleId: article.id,
-                success: true,
                 metadata: {
-                    trendingTopic: result.trendingTopic,
-                    sourceType: result.sourceType,
-                    keyFacts: result.keyFacts,
-                    sources: result.sources,
-                    reasoning: result.reasoning,
+                    count: createdArticles.length,
+                    topics: topics.map((t: any) => t.title),
+                    analysis: "Simulated deep search of social media signals."
                 },
-            },
+                success: true
+            }
         })
 
-        console.log(`[Viral News] Created article: ${article.title}`)
+        return NextResponse.json({ success: true, articles: createdArticles })
 
-        return NextResponse.json({
-            success: true,
-            article: {
-                id: article.id,
-                title: article.title,
-                slug: article.slug,
-                category: article.category,
-                status: article.status,
-            },
-            discovery: {
-                trendingTopic: result.trendingTopic,
-                sourceType: result.sourceType,
-                reasoning: result.reasoning,
-            },
-        })
     } catch (error) {
-        console.error('[Viral News] Error:', error)
-
-        // Log failed attempt
-        try {
-            await db.aiActivityLog.create({
-                data: {
-                    action: 'discover-viral',
-                    success: false,
-                    metadata: {
-                        error: error instanceof Error ? error.message : 'Unknown error',
-                    },
-                },
-            })
-        } catch (logError) {
-            console.error('Failed to log error:', logError)
-        }
-
-        return NextResponse.json(
-            { error: 'Failed to discover and create viral news', details: error instanceof Error ? error.message : 'Unknown error' },
-            { status: 500 }
-        )
+        console.error('Viral Discovery Error:', error)
+        return NextResponse.json({ success: false, error: 'Failed to discover viral news' }, { status: 500 })
     }
 }

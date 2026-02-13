@@ -234,3 +234,16 @@ model Report {
 
   @@map("reports")
 }
+
+// Editable Schedule Configuration
+model ScheduleConfig {
+  id        String   @id @default(cuid())
+  time      String   // e.g. "06:00"
+  label     String   // e.g. "Hot News"
+  slots     Int      @default(1)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("schedule_configs")
+}
