@@ -1,0 +1,71 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { db } from '@/lib/db'
+
+interface Params {
+  params: Promise<{ id: string }>
+}
+
+export async function GET(request: NextRequest, { params }: Params) {
+  try {
+    const { id } = await params
+    const article = await db.article.findUnique({
+      where: { id },
+      include: {
+        author: { select: { id: true, name: true, email: true } },
+        evidences: true,
+      },
+    })
+
+    if (!article) {
+      return NextResponse.json({ error: 'Article not found' }, { status: 404 })
+    }
+
+    return NextResponse.json({ article })
+  } catch (error) {
+    console.error('Get article error:', error)
+    return NextResponse.json({ error: 'Failed to fetch article' }, { status: 500 })
+  }
+}
+
+export async function PUT(request: NextRequest, { params }: Params) {
+  try {
+    const { id } = await params
+    const body = await request.json()
+    
+    const article = await db.article.update({
+      where: { id },
+      data: {
+        title: body.title,
+        excerpt: body.excerpt,
+        content: body.content,
+        category: body.category,
+        featuredImageUrl: body.featuredImageUrl,
+        featuredImageAlt: body.featuredImageAlt,
+        imageSource: body.imageSource,
+        status: body.status,
+      },
+    })
+
+    return NextResponse.json({ article })
+  } catch (error) {
+    console.error('Update article error:', error)
+    return NextResponse.json({ error: 'Failed to update article' }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: Params) {
+  try {
+    const { id } = await params
+    
+    // Delete related evidences first
+    await db.evidence.deleteMany({ where: { articleId: id } })
+    await db.comment.deleteMany({ where: { articleId: id } })
+    
+    await db.article.delete({ where: { id } })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Delete article error:', error)
+    return NextResponse.json({ error: 'Failed to delete article' }, { status: 500 })
+  }
+}

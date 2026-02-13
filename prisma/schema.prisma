@@ -1,0 +1,220 @@
+// NewsBali Online - Investigative Journalism Platform
+// Production-ready database schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// User Roles
+enum Role {
+  ADMIN
+  EDITOR
+  USER
+}
+
+// Article Categories
+enum Category {
+  TOURISM
+  INVESTMENT
+  INCIDENTS
+  LOCAL
+  JOBS
+  OPINION
+}
+
+// Legal Risk Levels
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// Verification Levels
+enum Verification {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+// Article Status
+enum Status {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  REJECTED
+}
+
+// Comment Status
+enum CommentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FLAGGED
+}
+
+// Users Model
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  password     String?
+  name         String?
+  role         Role      @default(USER)
+  avatar       String?
+  bio          String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  comments     Comment[]
+  articles     Article[]
+  subscribers  Subscriber[]
+  sessions     Session[]
+  
+  @@map("users")
+}
+
+// Articles Model
+model Article {
+  id                  String      @id @default(uuid())
+  title               String
+  slug                String      @unique
+  excerpt             String
+  content             String
+  category            Category
+  featuredImageUrl    String?
+  featuredImageAlt    String?
+  imageSource         String?
+  aiAssisted          Boolean     @default(false)
+  riskLevel           RiskLevel   @default(LOW)
+  riskScore           Int         @default(0)
+  containsAccusation  Boolean     @default(false)
+  verificationLevel   Verification @default(LOW)
+  evidenceCount       Int         @default(0)
+  legalReviewRequired Boolean     @default(false)
+  legalReviewedBy     String?
+  legalReviewedAt     DateTime?
+  status              Status      @default(DRAFT)
+  viewCount           Int         @default(0)
+  authorId            String
+  author              User        @relation(fields: [authorId], references: [id])
+  evidences           Evidence[]
+  comments            Comment[]
+  aiActivityLogs      AiActivityLog[]
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  publishedAt         DateTime?
+  
+  @@index([category])
+  @@index([status])
+  @@index([publishedAt])
+  @@map("articles")
+}
+
+// Evidence Model
+model Evidence {
+  id          String    @id @default(uuid())
+  articleId   String
+  article     Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  fileUrl     String
+  type        String    // document, image, video, audio
+  source      String
+  description String?
+  verified    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  
+  @@map("evidences")
+}
+
+// Comments Model (Account Required)
+model Comment {
+  id              String        @id @default(uuid())
+  content         String
+  articleId       String
+  article         Article       @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  parentId        String?
+  status          CommentStatus @default(PENDING)
+  toxicityScore   Float?
+  legalRiskScore  Float?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  @@index([articleId])
+  @@index([userId])
+  @@index([status])
+  @@map("comments")
+}
+
+// Subscribers Model
+model Subscriber {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  active    Boolean  @default(true)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  
+  @@map("subscribers")
+}
+
+// Audit Log for Legal Compliance
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  entity    String
+  entityId  String
+  userId    String?
+  metadata  String?  // JSON string
+  createdAt DateTime @default(now())
+  
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
+
+// AI Settings for automation control
+model AiSettings {
+  id              String    @id @default(cuid())
+  autoPublish     Boolean   @default(false)
+  dailyLimit      Int       @default(3)
+  lastGeneration  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("ai_settings")
+}
+
+// AI Activity Log for monitoring
+model AiActivityLog {
+  id            String   @id @default(cuid())
+  action        String   // "generate", "rewrite", "analyze"
+  category      Category?
+  sourceUrl     String?  // For rewrites
+  articleId     String?
+  article       Article? @relation(fields: [articleId], references: [id], onDelete: SetNull)
+  success       Boolean  @default(true)
+  metadata      Json?    // Store AI thoughts, decisions, etc.
+  createdAt     DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("ai_activity_logs")
+}
+
+// Sessions for Auth
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  token        String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("sessions")
+}
