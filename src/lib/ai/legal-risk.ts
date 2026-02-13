@@ -1,4 +1,5 @@
 import { getZaiClient } from './zAiClient'
+import { moderateContent } from './moderation'
 
 interface LegalRiskResult {
   riskScore: number // 0-100
@@ -111,4 +112,3 @@ export function calculateToxicityScore(content: string): Promise<number> {
   })
 }
 
-import { moderateContent } from './moderation'
