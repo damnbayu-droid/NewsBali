@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+export const runtime = 'edge'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 import { commentSchema } from '@/lib/validators'
@@ -7,7 +9,7 @@ import { moderateContent, getCommentStatusFromModeration } from '@/lib/ai/modera
 export async function POST(request: NextRequest) {
   try {
     const user = await getSession()
-    
+
     if (!user) {
       return NextResponse.json(
         { error: 'Anda harus login untuk berkomentar' },
@@ -16,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    
+
     // Validate input
     const result = commentSchema.safeParse(body)
     if (!result.success) {

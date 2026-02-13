@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+export const runtime = 'edge'
 import { db } from '@/lib/db'
 
 interface Params {
@@ -9,7 +11,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params
     const body = await request.json()
-    
+
     const user = await db.user.update({
       where: { id },
       data: { role: body.role },
@@ -25,12 +27,12 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params
-    
+
     // Delete related data
     await db.comment.deleteMany({ where: { userId: id } })
     await db.session.deleteMany({ where: { userId: id } })
     await db.user.delete({ where: { id } })
-    
+
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Delete user error:', error)

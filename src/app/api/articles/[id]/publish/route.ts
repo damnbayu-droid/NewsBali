@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+export const runtime = 'edge'
 import { db } from '@/lib/db'
 import { checkPublishRequirements } from '@/lib/legal'
 
@@ -9,10 +11,10 @@ interface Params {
 export async function POST(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params
-    
+
     // Check publish requirements
     const check = await checkPublishRequirements(id)
-    
+
     if (!check.canPublish) {
       return NextResponse.json({
         error: 'Cannot publish article',
@@ -29,8 +31,8 @@ export async function POST(request: NextRequest, { params }: Params) {
       },
     })
 
-    return NextResponse.json({ 
-      article, 
+    return NextResponse.json({
+      article,
       published: true,
       warnings: check.warnings,
     })

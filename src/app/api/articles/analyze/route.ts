@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+export const runtime = 'edge'
 import { analyzeLegalRisk } from '@/lib/ai/legal-risk'
 
 export async function POST(request: NextRequest) {

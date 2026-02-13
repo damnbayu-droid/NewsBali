@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+export const runtime = 'edge'
 import { db } from '@/lib/db'
 import { verifyPassword, createSession, setSessionCookie } from '@/lib/auth'
 import { loginSchema } from '@/lib/validators'
@@ -6,7 +7,7 @@ import { loginSchema } from '@/lib/validators'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    
+
     // Validate input
     const result = loginSchema.safeParse(body)
     if (!result.success) {

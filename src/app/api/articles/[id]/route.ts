@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+export const runtime = 'edge'
 import { db } from '@/lib/db'
 
 interface Params {
@@ -31,7 +33,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params
     const body = await request.json()
-    
+
     const article = await db.article.update({
       where: { id },
       data: {
@@ -56,11 +58,11 @@ export async function PUT(request: NextRequest, { params }: Params) {
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params
-    
+
     // Delete related evidences first
     await db.evidence.deleteMany({ where: { articleId: id } })
     await db.comment.deleteMany({ where: { articleId: id } })
-    
+
     await db.article.delete({ where: { id } })
 
     return NextResponse.json({ success: true })

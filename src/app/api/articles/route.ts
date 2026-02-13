@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+export const runtime = 'edge'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 import { articleSchema } from '@/lib/validators'
@@ -35,7 +37,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const user = await getSession()
-    
+
     if (!user || (user.role !== 'ADMIN' && user.role !== 'EDITOR')) {
       return NextResponse.json(
         { error: 'Anda tidak memiliki akses' },
@@ -44,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    
+
     // Validate input
     const result = articleSchema.safeParse(body)
     if (!result.success) {
@@ -62,11 +64,11 @@ export async function POST(request: NextRequest) {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')
       .slice(0, 100)
-    
+
     const existingSlug = await db.article.findFirst({
       where: { slug: { startsWith: baseSlug } },
     })
-    
+
     const slug = existingSlug ? `${baseSlug}-${Date.now()}` : baseSlug
 
     // Analyze legal risk

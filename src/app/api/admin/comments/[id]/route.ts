@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+export const runtime = 'edge'
 import { db } from '@/lib/db'
 
 interface Params {
@@ -9,7 +10,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params
     const body = await request.json()
-    
+
     const comment = await db.comment.update({
       where: { id },
       data: { status: body.status },

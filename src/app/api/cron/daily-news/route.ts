@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+
+export const runtime = 'edge'
 import { generateNewsArticles } from '@/lib/ai/news-generator'
 import { db } from '@/lib/db'
 

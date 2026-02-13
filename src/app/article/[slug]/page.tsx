@@ -1,17 +1,19 @@
 import { db } from '@/lib/db'
 import { notFound } from 'next/navigation'
+
+export const runtime = 'edge'
 import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { 
-  User, 
-  Clock, 
-  Eye, 
-  Share2, 
-  Bookmark, 
-  FileText, 
-  Shield, 
+import {
+  User,
+  Clock,
+  Eye,
+  Share2,
+  Bookmark,
+  FileText,
+  Shield,
   AlertTriangle,
   CheckCircle,
   MessageCircle
@@ -108,15 +110,15 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   return (
     <>
       <ArticleJsonLd article={article} />
-      
+
       <article className="py-8">
         <div className="container mx-auto max-w-4xl px-4">
           {/* Breadcrumb */}
           <nav className="mb-6 text-sm text-muted-foreground">
             <Link href="/" className="hover:text-foreground">Beranda</Link>
             <span className="mx-2">/</span>
-            <Link 
-              href={`/category/${article.category.toLowerCase()}`} 
+            <Link
+              href={`/category/${article.category.toLowerCase()}`}
               className="hover:text-foreground"
             >
               {categoryLabels[article.category]}
@@ -134,8 +136,8 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
               {article.aiAssisted && (
                 <Badge variant="outline">AI-Assisted</Badge>
               )}
-              <Badge 
-                variant="outline" 
+              <Badge
+                variant="outline"
                 className="flex items-center gap-1"
               >
                 <Shield className="h-3 w-3" />
@@ -194,7 +196,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           )}
 
           {/* Article Content */}
-          <div 
+          <div
             className="prose prose-neutral dark:prose-invert max-w-none mb-8"
             dangerouslySetInnerHTML={{ __html: article.content }}
           />
@@ -263,8 +265,8 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                 Komentar ({article.comments.length})
               </h2>
             </div>
-            <CommentSection 
-              articleId={article.id} 
+            <CommentSection
+              articleId={article.id}
               comments={article.comments}
             />
           </div>

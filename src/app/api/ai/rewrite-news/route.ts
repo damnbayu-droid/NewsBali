@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+
+export const runtime = 'edge'
 import { getSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import OpenAI from 'openai'
