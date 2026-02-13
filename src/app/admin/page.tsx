@@ -1054,178 +1054,24 @@ export default function MasterAdminDashboard() {
 
           {/* AI Control Panel Tab */}
           <TabsContent value="ai">
-            <div className="space-y-6">
-              {/* AI Status Card - Auto-publish toggle */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5" />
-                    AI Automation Status
-                  </CardTitle>
-                  <CardDescription>
-                    Control automated AI news generation and publishing
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="auto-publish" className="text-base font-medium">
-                        Auto-Publish AI Articles
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        Automatically publish AI-generated articles without review
-                      </p>
-                    </div>
-                    <Button variant="outline" onClick={() => alert('Toggle auto-publish (connect to API)')}>
-                      Toggle On/Off
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
-                    <div className="p-4 border rounded-lg">
-                      <div className="text-2xl font-bold">3/day</div>
-                      <div className="text-sm text-muted-foreground">Daily Limit</div>
-                    </div>
-                    <div className="p-4 border rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">Active</div>
-                      <div className="text-sm text-muted-foreground">Status</div>
-                    </div>
-                    <div className="p-4 border rounded-lg">
-                      <div className="text-2xl font-bold">12h ago</div>
-                      <div className="text-sm text-muted-foreground">Last Generation</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Manual Generation Panel */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Zap className="h-5 w-5" />
-                    Generate News Manually
-                  </CardTitle>
-                  <CardDescription>
-                    Trigger AI to create news articles on-demand
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-4">
-                    <div className="flex-1">
-                      <Label htmlFor="article-count">Number of Articles</Label>
-                      <Input
-                        id="article-count"
-                        type="number"
-                        min="1"
-                        max="10"
-                        defaultValue="3"
-                        placeholder="3"
-                      />
-                    </div>
-                    <div className="flex items-end">
-                      <Button
-                        onClick={() => alert('Generate articles (connect to /api/ai/generate-news)')}
-                        className="gap-2"
-                      >
-                        <Sparkles className="h-4 w-4" />
-                        Generate Now
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* News Rewriter Tool */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Brain className="h-5 w-5" />
-                    News Rewriter & Analyzer
-                  </CardTitle>
-                  <CardDescription>
-                    Paste a news URL to have AI rewrite it in NewsBali style with analysis
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex gap-4">
-                    <Input
-                      placeholder="https://example.com/news-article"
-                      className="flex-1"
-                    />
-                    <Button onClick={() => alert('Rewrite article (connect to /api/ai/rewrite-news)')}>
-                      Rewrite & Analyze
-                    </Button>
-                  </div>
-
-                  {/* Example results mockup */}
-                  <div className="border rounded-lg p-4 bg-muted/50">
-                    <Tabs defaultValue="ai-thoughts" className="w-full">
-                      <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="ai-thoughts">AI Thoughts</TabsTrigger>
-                        <TabsTrigger value="original">Original</TabsTrigger>
-                        <TabsTrigger value="rewritten">Rewritten</TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="ai-thoughts" className="space-y-2">
-                        <h4 className="font-semibold text-sm">AI Decision Process:</h4>
-                        <ul className="text-sm space-y-1 text-muted-foreground">
-                          <li>• Selected TOURISM category (best fit for content)</li>
-                          <li>• Risk Level: LOW (general announcement, no controversy)</li>
-                          <li>• Verification: MEDIUM (standard reporting practices)</li>
-                          <li>• Key points: 3 main facts extracted</li>
-                          <li>• Writing style: Professional journalism, neutral tone</li>
-                        </ul>
-                      </TabsContent>
-                      <TabsContent value="original">
-                        <p className="text-sm text-muted-foreground">Original article content will appear here...</p>
-                      </TabsContent>
-                      <TabsContent value="rewritten">
-                        <p className="text-sm text-muted-foreground">Rewritten version will appear here...</p>
-                      </TabsContent>
-                    </Tabs>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* AI Activity Log */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5" />
-                    AI Activity Log
-                  </CardTitle>
-                  <CardDescription>
-                    Recent AI actions and decisions
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {/* Example activity items */}
-                    {[
-                      { action: 'Generated', category: 'TOURISM', time: '2 hours ago', success: true },
-                      { action: 'Rewritten', category: 'INVESTMENT', time: '5 hours ago', success: true },
-                      { action: 'Generated', category: 'LOCAL', time: '1 day ago', success: true },
-                    ].map((item, idx) => (
-                      <div key={idx} className="p-3 border rounded flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {item.success ? (
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <XCircle className="h-4 w-4 text-red-600" />
-                          )}
-                          <div>
-                            <div className="font-medium text-sm">{item.action} article</div>
-                            <div className="text-xs text-muted-foreground">
-                              Category: {item.category}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-xs text-muted-foreground">{item.time}</div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5" />
+                  AI Command Center
+                </CardTitle>
+                <CardDescription>
+                  Live terminal and control panel for autonomous news generation
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AiControls
+                  onSuccess={(msg) => setSuccess(msg)}
+                  onError={(msg) => setError(msg)}
+                  onRefresh={fetchAllData}
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Settings Tab */}
@@ -1355,7 +1201,7 @@ export default function MasterAdminDashboard() {
             </div>
           </TabsContent>
         </Tabs>
-      </main>
-    </div>
+      </main >
+    </div >
   )
 }

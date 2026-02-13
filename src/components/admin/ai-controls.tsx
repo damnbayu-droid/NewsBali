@@ -156,6 +156,31 @@ export function AiControls({ onSuccess, onError, onRefresh }: AiControlsProps) {
         }
     }
 
+    // Live Activity Log State
+    const [logs, setLogs] = useState<any[]>([])
+    const [refreshingLogs, setRefreshingLogs] = useState(false)
+
+    useEffect(() => {
+        fetchLogs()
+        const interval = setInterval(fetchLogs, 5000) // Poll every 5s
+        return () => clearInterval(interval)
+    }, [])
+
+    const fetchLogs = async () => {
+        setRefreshingLogs(true)
+        try {
+            const res = await fetch('/api/ai/activity')
+            if (res.ok) {
+                const data = await res.json()
+                setLogs(data.logs || [])
+            }
+        } catch (error) {
+            console.error('Failed to fetch activity logs', error)
+        } finally {
+            setRefreshingLogs(false)
+        }
+    }
+
     return (
         <div className="space-y-6">
             {/* Auto-Publish Toggle */}
@@ -265,6 +290,40 @@ export function AiControls({ onSuccess, onError, onRefresh }: AiControlsProps) {
                         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                         Rewrite
                     </Button>
+                </div>
+            </div>
+
+            {/* Live Terminal */}
+            <div className="border border-slate-700 bg-slate-950 rounded-lg overflow-hidden mt-6">
+                <div className="bg-slate-900 px-4 py-2 border-b border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-red-500" />
+                        <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                        <div className="w-3 h-3 rounded-full bg-green-500" />
+                        <span className="ml-2 text-xs font-mono text-slate-400">newsbali-ai-terminal — bash — 80x24</span>
+                    </div>
+                    {refreshingLogs && <Loader2 className="h-3 w-3 text-slate-500 animate-spin" />}
+                </div>
+                <div className="p-4 h-64 overflow-y-auto font-mono text-xs space-y-2">
+                    {logs.length === 0 ? (
+                        <div className="text-slate-500 italic">Waiting for AI activity...</div>
+                    ) : (
+                        logs.map((log) => (
+                            <div key={log.id} className="flex gap-2">
+                                <span className="text-slate-500">[{new Date(log.createdAt).toLocaleTimeString()}]</span>
+                                <span className={log.success ? "text-green-400" : "text-red-400"}>
+                                    {log.success ? "✓" : "✗"}
+                                </span>
+                                <span className="text-blue-400">{log.action.toUpperCase()}</span>
+                                <span className="text-slate-300">
+                                    {log.action === 'discover-viral' && `Discovered viral topic: ${log.metadata?.trendingTopic || 'Unknown'}`}
+                                    {log.action === 'rewrite' && `Rewrote article from: ${log.metadata?.sourceUrl || 'URL'}`}
+                                    {log.action === 'generate' && `Generated ${log.category} article`}
+                                </span>
+                            </div>
+                        ))
+                    )}
+                    <div className="animate-pulse text-green-500">_</div>
                 </div>
             </div>
         </div>
