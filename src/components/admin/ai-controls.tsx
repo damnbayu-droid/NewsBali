@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -24,6 +24,51 @@ export function AiControls({ onSuccess, onError, onRefresh }: AiControlsProps) {
     const [articleCount, setArticleCount] = useState('3')
     const [viralCategory, setViralCategory] = useState('random')
     const [rewriteUrl, setRewriteUrl] = useState('')
+
+    // Auto-publish state
+    const [autoPublish, setAutoPublish] = useState(false)
+    const [settingsLoading, setSettingsLoading] = useState(true)
+
+    useEffect(() => {
+        fetchSettings()
+    }, [])
+
+    const fetchSettings = async () => {
+        try {
+            const res = await fetch('/api/ai/settings')
+            if (res.ok) {
+                const data = await res.json()
+                setAutoPublish(data.autoPublish)
+            }
+        } catch (error) {
+            console.error('Failed to fetch AI settings', error)
+        } finally {
+            setSettingsLoading(false)
+        }
+    }
+
+    const toggleAutoPublish = async () => {
+        const newState = !autoPublish
+        // Optimistic update
+        setAutoPublish(newState)
+
+        try {
+            const res = await fetch('/api/ai/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ autoPublish: newState })
+            })
+
+            if (!res.ok) {
+                throw new Error('Failed to update settings')
+            }
+
+            onSuccess(newState ? 'Auto-publish enabled' : 'Auto-publish disabled')
+        } catch (error) {
+            setAutoPublish(!newState) // Revert on error
+            onError('Failed to update auto-publish settings')
+        }
+    }
 
     const handleGenerate = async () => {
         setLoading(true)
@@ -100,7 +145,31 @@ export function AiControls({ onSuccess, onError, onRefresh }: AiControlsProps) {
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
+            {/* Auto-Publish Toggle */}
+            <div className="flex items-center justify-between p-4 border rounded-lg bg-card">
+                <div>
+                    <Label htmlFor="auto-publish" className="text-base font-medium">
+                        Auto-Publish AI Articles
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                        Automatically publish created articles without manual review
+                    </p>
+                </div>
+                <Button
+                    variant={autoPublish ? "default" : "outline"}
+                    onClick={toggleAutoPublish}
+                    disabled={settingsLoading}
+                    className={autoPublish ? "bg-green-600 hover:bg-green-700" : ""}
+                >
+                    {settingsLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                        autoPublish ? "Enabled" : "Disabled"
+                    )}
+                </Button>
+            </div>
+
             {/* Manual Generation */}
             <div className="flex gap-4">
                 <div className="flex-1">

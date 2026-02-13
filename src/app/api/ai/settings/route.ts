@@ -2,42 +2,24 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 
-// GET - Fetch AI settings
 export async function GET() {
     try {
         const user = await getSession()
-
-        if (!user || user.role !== 'ADMIN') {
+        if (!user || (user.role !== 'ADMIN' && user.role !== 'EDITOR')) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        // Get or create settings
-        let settings = await db.aiSettings.findFirst()
+        const settings = await db.aiSettings.findFirst()
 
-        if (!settings) {
-            settings = await db.aiSettings.create({
-                data: {
-                    autoPublish: false,
-                    dailyLimit: 3,
-                },
-            })
-        }
-
-        return NextResponse.json({ settings })
+        return NextResponse.json(settings || { autoPublish: false, dailyLimit: 3 })
     } catch (error) {
-        console.error('Error fetching AI settings:', error)
-        return NextResponse.json(
-            { error: 'Failed to fetch settings' },
-            { status: 500 }
-        )
+        return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 })
     }
 }
 
-// POST - Update AI settings
 export async function POST(request: Request) {
     try {
         const user = await getSession()
-
         if (!user || user.role !== 'ADMIN') {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
@@ -45,31 +27,29 @@ export async function POST(request: Request) {
         const body = await request.json()
         const { autoPublish, dailyLimit } = body
 
-        let settings = await db.aiSettings.findFirst()
+        // Upsert settings (there should only be one record)
+        const firstSetting = await db.aiSettings.findFirst()
 
-        if (!settings) {
-            settings = await db.aiSettings.create({
+        let settings
+        if (firstSetting) {
+            settings = await db.aiSettings.update({
+                where: { id: firstSetting.id },
                 data: {
-                    autoPublish: autoPublish ?? false,
-                    dailyLimit: dailyLimit ?? 3,
-                },
+                    autoPublish: autoPublish !== undefined ? autoPublish : undefined,
+                    dailyLimit: dailyLimit !== undefined ? dailyLimit : undefined,
+                }
             })
         } else {
-            settings = await db.aiSettings.update({
-                where: { id: settings.id },
+            settings = await db.aiSettings.create({
                 data: {
-                    autoPublish: autoPublish ?? settings.autoPublish,
-                    dailyLimit: dailyLimit ?? settings.dailyLimit,
-                },
+                    autoPublish: autoPublish || false,
+                    dailyLimit: dailyLimit || 3,
+                }
             })
         }
 
-        return NextResponse.json({ settings })
+        return NextResponse.json(settings)
     } catch (error) {
-        console.error('Error updating AI settings:', error)
-        return NextResponse.json(
-            { error: 'Failed to update settings' },
-            { status: 500 }
-        )
+        return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 })
     }
 }

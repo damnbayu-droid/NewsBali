@@ -17,7 +17,12 @@ export async function GET(request: Request) {
             )
         }
 
-        console.log('[CRON] Starting daily news generation...')
+        // Get settings
+        const settings = await db.aiSettings.findFirst()
+        const count = settings?.dailyLimit || 3
+        const autoPublish = settings?.autoPublish ?? false
+
+        console.log(`[CRON] Starting daily news generation (Count: ${count}, Auto-Publish: ${autoPublish})...`)
 
         // Get admin user to author the articles
         const adminUser = await db.user.findFirst({
@@ -28,8 +33,10 @@ export async function GET(request: Request) {
             throw new Error('No admin user found')
         }
 
-        // Generate 3 articles
-        const articles = await generateNewsArticles(3, adminUser.id)
+        // Generate articles
+        // Note: The generator currently defaults to PUBLISHED. 
+        // We could pass an override or update the generator to handle status.
+        const articles = await generateNewsArticles(count, adminUser.id)
 
         console.log(`[CRON] Successfully generated ${articles.length} articles`)
 

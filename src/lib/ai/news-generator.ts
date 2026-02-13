@@ -1,6 +1,6 @@
 import OpenAI from 'openai'
 import { db } from '@/lib/db'
-import { Category, RiskLevel, Verification } from '@prisma/client'
+import { Category, RiskLevel, Verification, Status } from '@prisma/client'
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -130,7 +130,7 @@ Verification level guidelines:
     }
 }
 
-export async function generateNewsArticles(count: number = 3, authorId: string) {
+export async function generateNewsArticles(count: number = 3, authorId: string, status: Status = 'PUBLISHED') {
     const articles: any[] = []
 
     for (let i = 0; i < count; i++) {
@@ -170,7 +170,7 @@ export async function generateNewsArticles(count: number = 3, authorId: string) 
                     verificationLevel: generated.verificationLevel,
                     evidenceCount: generated.evidenceCount,
                     legalReviewRequired: generated.riskLevel === 'HIGH',
-                    status: 'PUBLISHED',
+                    status: status,
                     authorId,
                     publishedAt,
                 },

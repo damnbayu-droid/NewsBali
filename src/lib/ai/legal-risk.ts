@@ -1,4 +1,4 @@
-import { zAiWeb } from 'z-ai-web-dev-sdk'
+import zAiWeb from 'z-ai-web-dev-sdk'
 
 interface LegalRiskResult {
   riskScore: number // 0-100
@@ -53,9 +53,9 @@ Respond ONLY with a JSON object.`
     })
 
     const result = JSON.parse(response.choices[0].message.content)
-    
+
     const riskScore = Math.min(100, Math.max(0, result.riskScore || 0))
-    
+
     return {
       riskScore,
       riskLevel: getRiskLevelFromScore(riskScore),
