@@ -413,19 +413,7 @@ export default function MasterAdminDashboard() {
     }
   }
 
-  function resetArticleForm() {
-    setArticleForm({
-      title: '',
-      excerpt: '',
-      content: '',
-      category: '',
-      featuredImageUrl: '',
-      featuredImageAlt: '',
-      imageSource: '',
-      status: 'DRAFT',
-    })
-    setRiskAnalysis(null)
-  }
+
 
   function openEditArticle(article: Article) {
     setEditingArticle(article)
