@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-export const runtime = 'edge'
 import { db } from '@/lib/db'
 import { verifyPassword, createSession, setSessionCookie } from '@/lib/auth'
 import { loginSchema } from '@/lib/validators'

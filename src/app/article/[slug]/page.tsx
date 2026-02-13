@@ -1,7 +1,6 @@
 import { db } from '@/lib/db'
 import { notFound } from 'next/navigation'
 
-export const runtime = 'edge'
 import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'

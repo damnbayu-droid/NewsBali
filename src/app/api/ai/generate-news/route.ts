@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 
-export const runtime = 'edge'
 import { getSession } from '@/lib/auth/session'
 import { generateNewsArticles } from '@/lib/ai/news-generator'
 
