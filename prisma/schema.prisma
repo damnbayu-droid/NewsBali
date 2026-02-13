@@ -44,11 +44,11 @@ enum Verification {
 }
 
 // Article Status
-enum Status {
   DRAFT
   REVIEW
   PUBLISHED
   REJECTED
+  SCHEDULED
 }
 
 // Comment Status

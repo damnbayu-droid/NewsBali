@@ -583,6 +583,86 @@ export default function MasterAdminDashboard() {
               </Card>
             </div>
 
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Assistant Admin Card */}
+              <Card className="border-blue-500/20 bg-blue-50/10">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="h-5 w-5 text-blue-500" />
+                    Assistant Admin (The Boss)
+                  </CardTitle>
+                  <CardDescription>
+                    Autonomous agent for quality control, repairs, and scheduling.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="p-3 bg-muted rounded-md text-xs font-mono h-32 overflow-y-auto">
+                    <p className="text-muted-foreground italic">System Ready. Waiting for directives...</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      onClick={async () => {
+                        const res = await fetch('/api/ai/assistant', {
+                          method: 'POST',
+                          body: JSON.stringify({ action: 'full-run' })
+                        })
+                        const data = await res.json()
+                        if (data.success) {
+                          alert(`Assistant ran successfully:\n${data.logs.join('\n')}`)
+                          fetchAllData()
+                        } else {
+                          alert('Assistant failed to run')
+                        }
+                      }}
+                    >
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Run Full Agent Loop
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Schedule Card */}
+              <Card className="border-indigo-500/20 bg-indigo-50/10">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-indigo-500" />
+                    Smart Schedule
+                  </CardTitle>
+                  <CardDescription>
+                    Upcoming content distribution plan
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-2 border rounded bg-background/50">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">06:00 AM</Badge>
+                        <span className="text-sm font-medium">Hot News (3 Slots)</span>
+                      </div>
+                      <Badge className="bg-green-500">Active</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-2 border rounded bg-background/50">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">12:00 PM</Badge>
+                        <span className="text-sm font-medium">Lunch Update (2 Slots)</span>
+                      </div>
+                      <Badge className="bg-green-500">Active</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-2 border rounded bg-background/50">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">18:00 PM</Badge>
+                        <span className="text-sm font-medium">Evening Recap (2 Slots)</span>
+                      </div>
+                      <Badge className="bg-green-500">Active</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
