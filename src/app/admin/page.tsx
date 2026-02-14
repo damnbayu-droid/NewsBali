@@ -512,7 +512,7 @@ export default function MasterAdminDashboard() {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-6 mb-6">
+          <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 mb-6 h-auto">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Overview</span>
@@ -970,20 +970,20 @@ export default function MasterAdminDashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Image</TableHead>
+                        <TableHead className="w-[100px] hidden sm:table-cell">Image</TableHead>
                         <TableHead>Title</TableHead>
-                        <TableHead>Category</TableHead>
+                        <TableHead className="hidden lg:table-cell">Category</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Risk</TableHead>
-                        <TableHead>Views</TableHead>
-                        <TableHead>Created</TableHead>
+                        <TableHead className="hidden xl:table-cell">Risk</TableHead>
+                        <TableHead className="hidden xl:table-cell">Views</TableHead>
+                        <TableHead className="hidden lg:table-cell">Created</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredArticles.map((article) => (
                         <TableRow key={article.id}>
-                          <TableCell>
+                          <TableCell className="hidden sm:table-cell">
                             <div className="relative w-16 h-12 rounded overflow-hidden bg-muted">
                               {article.featuredImageUrl ? (
                                 <Image
@@ -1001,22 +1001,22 @@ export default function MasterAdminDashboard() {
                           </TableCell>
                           <TableCell className="max-w-xs">
                             <p className="font-medium line-clamp-1">{article.title}</p>
-                            <p className="text-xs text-muted-foreground">{article.author?.name || 'Unknown'}</p>
+                            <p className="text-xs text-muted-foreground hidden md:block">{article.author?.name || 'Unknown'}</p>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden lg:table-cell">
                             <Badge variant="outline">{article.category}</Badge>
                           </TableCell>
                           <TableCell>
                             <Badge variant={statusColors[article.status]}>{article.status}</Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden xl:table-cell">
                             <div className="flex items-center gap-2">
                               <div className={`w-2 h-2 rounded-full ${riskColors[article.riskLevel]}`} />
                               <span className="text-sm">{article.riskScore}</span>
                             </div>
                           </TableCell>
-                          <TableCell>{article.viewCount}</TableCell>
-                          <TableCell>
+                          <TableCell className="hidden xl:table-cell">{article.viewCount}</TableCell>
+                          <TableCell className="hidden lg:table-cell">
                             {new Date(article.createdAt).toLocaleDateString('id-ID')}
                           </TableCell>
                           <TableCell className="text-right">
@@ -1071,11 +1071,11 @@ export default function MasterAdminDashboard() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Content</TableHead>
-                        <TableHead>User</TableHead>
-                        <TableHead>Article</TableHead>
-                        <TableHead>Toxicity</TableHead>
+                        <TableHead className="hidden md:table-cell">User</TableHead>
+                        <TableHead className="hidden lg:table-cell">Article</TableHead>
+                        <TableHead className="hidden sm:table-cell">Toxicity</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Date</TableHead>
+                        <TableHead className="hidden xl:table-cell">Date</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1085,16 +1085,16 @@ export default function MasterAdminDashboard() {
                           <TableCell className="max-w-xs">
                             <p className="text-sm line-clamp-2">{comment.content}</p>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden md:table-cell">
                             <div>
                               <p className="text-sm font-medium">{comment.user.name || 'Anonymous'}</p>
                               <p className="text-xs text-muted-foreground">{comment.user.email}</p>
                             </div>
                           </TableCell>
-                          <TableCell className="max-w-[150px]">
+                          <TableCell className="max-w-[150px] hidden lg:table-cell">
                             <p className="text-sm line-clamp-1">{comment.article.title}</p>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden sm:table-cell">
                             {comment.toxicityScore !== null ? (
                               <Badge variant={comment.toxicityScore > 0.5 ? 'destructive' : 'secondary'}>
                                 {(comment.toxicityScore * 100).toFixed(0)}%
@@ -1104,7 +1104,7 @@ export default function MasterAdminDashboard() {
                           <TableCell>
                             <Badge variant={statusColors[comment.status]}>{comment.status}</Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden xl:table-cell">
                             {new Date(comment.createdAt).toLocaleDateString('id-ID')}
                           </TableCell>
                           <TableCell className="text-right">
@@ -1150,11 +1150,11 @@ export default function MasterAdminDashboard() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>User</TableHead>
-                        <TableHead>Email</TableHead>
+                        <TableHead className="hidden md:table-cell">Email</TableHead>
                         <TableHead>Role</TableHead>
-                        <TableHead>Articles</TableHead>
-                        <TableHead>Comments</TableHead>
-                        <TableHead>Joined</TableHead>
+                        <TableHead className="hidden lg:table-cell">Articles</TableHead>
+                        <TableHead className="hidden lg:table-cell">Comments</TableHead>
+                        <TableHead className="hidden xl:table-cell">Joined</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1162,7 +1162,7 @@ export default function MasterAdminDashboard() {
                       {filteredUsers.map((user) => (
                         <TableRow key={user.id}>
                           <TableCell className="font-medium">{user.name || 'No name'}</TableCell>
-                          <TableCell>{user.email}</TableCell>
+                          <TableCell className="hidden md:table-cell">{user.email}</TableCell>
                           <TableCell>
                             <Select
                               value={user.role}
@@ -1178,9 +1178,9 @@ export default function MasterAdminDashboard() {
                               </SelectContent>
                             </Select>
                           </TableCell>
-                          <TableCell>{user._count?.articles || 0}</TableCell>
-                          <TableCell>{user._count?.comments || 0}</TableCell>
-                          <TableCell>
+                          <TableCell className="hidden lg:table-cell">{user._count?.articles || 0}</TableCell>
+                          <TableCell className="hidden lg:table-cell">{user._count?.comments || 0}</TableCell>
+                          <TableCell className="hidden xl:table-cell">
                             {new Date(user.createdAt).toLocaleDateString('id-ID')}
                           </TableCell>
                           <TableCell className="text-right">
@@ -1192,6 +1192,22 @@ export default function MasterAdminDashboard() {
                       ))}
                     </TableBody>
                   </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Reports Tab - Placeholder for now */}
+          <TabsContent value="reports">
+            <Card>
+              <CardHeader>
+                <CardTitle>Public Reports</CardTitle>
+                <CardDescription>User submitted reports on articles.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border p-8 text-center text-muted-foreground">
+                  <p>Report management module coming soon.</p>
+                  <p className="text-sm mt-2">{reports.length} reports in database.</p>
                 </div>
               </CardContent>
             </Card>

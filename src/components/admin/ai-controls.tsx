@@ -237,7 +237,7 @@ export function AiControls({ onSuccess, onError, onRefresh }: AiControlsProps) {
             </div>
 
             {/* Manual Generation */}
-            <div className="flex gap-4">
+            <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
                     <Label htmlFor="article-count">Number of Articles</Label>
                     <Input
@@ -253,7 +253,7 @@ export function AiControls({ onSuccess, onError, onRefresh }: AiControlsProps) {
                 <div className="flex items-end">
                     <Button
                         onClick={handleGenerate}
-                        className="gap-2"
+                        className="w-full md:w-auto gap-2"
                         disabled={loading}
                     >
                         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
@@ -268,7 +268,7 @@ export function AiControls({ onSuccess, onError, onRefresh }: AiControlsProps) {
                     <Activity className="h-4 w-4 text-primary" />
                     🔥 Discover & Recreate Viral News
                 </h4>
-                <div className="flex gap-4">
+                <div className="flex flex-col md:flex-row gap-4">
                     <div className="flex-1">
                         <Label htmlFor="viral-category">Category (Optional)</Label>
                         <Select value={viralCategory} onValueChange={setViralCategory}>
@@ -289,7 +289,7 @@ export function AiControls({ onSuccess, onError, onRefresh }: AiControlsProps) {
                     <div className="flex items-end">
                         <Button
                             onClick={handleDiscoverViral}
-                            className="gap-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                            className="w-full md:w-auto gap-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
                             disabled={loading}
                         >
                             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Activity className="h-4 w-4" />}
