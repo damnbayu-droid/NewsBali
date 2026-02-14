@@ -9,6 +9,7 @@ interface CategoryPageProps {
 
 const validCategories: Record<string, string> = {
   tourism: 'TOURISM',
+  government: 'GOVERNMENT',
   investment: 'INVESTMENT',
   incidents: 'INCIDENTS',
   local: 'LOCAL',
@@ -18,6 +19,7 @@ const validCategories: Record<string, string> = {
 
 const categoryLabels: Record<string, string> = {
   TOURISM: 'Tourism',
+  GOVERNMENT: 'Government',
   INVESTMENT: 'Investment',
   INCIDENTS: 'Incidents',
   LOCAL: 'Local',
@@ -27,6 +29,7 @@ const categoryLabels: Record<string, string> = {
 
 const categoryDescriptions: Record<string, string> = {
   TOURISM: 'News and investigations about Bali tourism industry',
+  GOVERNMENT: 'Bali provincial government policies, Governor statements, regulations, public services, key Jakarta updates affecting Bali',
   INVESTMENT: 'Analysis and reports about investment in Bali',
   INCIDENTS: 'Reports of incidents and important events in Bali',
   LOCAL: 'Local news and community stories across Bali',

@@ -13,7 +13,7 @@ async function getLatestArticles() {
   return db.article.findMany({
     where: { status: 'PUBLISHED' },
     orderBy: { publishedAt: 'desc' },
-    take: 20, // Increased to 20 for scrollable list
+    take: 50, // Increased to 50 for scrollable list
     include: {
       author: { select: { name: true } },
     },

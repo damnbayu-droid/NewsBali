@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 const categories = {
   en: [
     { href: '/category/tourism', label: 'Tourism' },
+    { href: '/category/government', label: 'Government' },
     { href: '/category/investment', label: 'Investment' },
     { href: '/category/incidents', label: 'Incidents' },
     { href: '/category/local', label: 'Local' },
@@ -18,6 +19,7 @@ const categories = {
   ],
   id: [
     { href: '/category/tourism', label: 'Pariwisata' },
+    { href: '/category/government', label: 'Pemerintah' },
     { href: '/category/investment', label: 'Investasi' },
     { href: '/category/incidents', label: 'Insiden' },
     { href: '/category/local', label: 'Lokal' },

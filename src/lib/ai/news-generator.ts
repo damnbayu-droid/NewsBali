@@ -1,6 +1,7 @@
 import OpenAI from 'openai'
 import { db } from '@/lib/db'
 import { Category, RiskLevel, Verification, Status } from '@prisma/client'
+import { validateImageUrl } from '@/lib/ai/image-validator'
 
 
 
@@ -13,14 +14,15 @@ interface GeneratedArticle {
     evidenceCount: number
 }
 
-const CATEGORIES: Category[] = ['TOURISM', 'INVESTMENT', 'INCIDENTS', 'LOCAL', 'JOBS', 'OPINION']
+const CATEGORIES: Category[] = ['TOURISM', 'GOVERNMENT', 'INVESTMENT', 'INCIDENTS', 'LOCAL', 'JOBS', 'OPINION']
 
 // Weighted category distribution
 const CATEGORY_WEIGHTS = {
-    TOURISM: 30,
-    INVESTMENT: 20,
-    LOCAL: 20,
-    JOBS: 15,
+    TOURISM: 25,
+    GOVERNMENT: 20,
+    INVESTMENT: 15,
+    LOCAL: 15,
+    JOBS: 10,
     INCIDENTS: 10,
     OPINION: 5,
 }
@@ -49,6 +51,7 @@ function generateSlug(title: string): string {
 
 const CATEGORY_GUIDELINES = {
     TOURISM: 'tourism industry, hotels, festivals, cultural attractions, visitor experiences',
+    GOVERNMENT: 'Bali provincial government policies, Governor statements, regulations, public services, key Jakarta updates affecting Bali',
     INVESTMENT: 'business investments, startups, funding rounds, economic development, venture capital',
     INCIDENTS: 'accidents, natural disasters, emergencies, safety alerts, volcanic activity',
     LOCAL: 'community initiatives, local government programs, cultural preservation, infrastructure',
@@ -153,6 +156,25 @@ export async function generateNewsArticles(count: number = 3, authorId: string, 
             const hoursAgo = Math.floor(Math.random() * 24)
             const publishedAt = new Date(Date.now() - hoursAgo * 3600000)
 
+            // Validate Image Logic
+            let imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(generated.title + ' Bali news realistic')}?width=1200&height=800&nologo=true`
+            let isImageValid = await validateImageUrl(imageUrl)
+            let imageAttempts = 0
+
+            while (!isImageValid && imageAttempts < 3) {
+                imageAttempts++
+                const seed = Math.floor(Math.random() * 10000)
+                imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(generated.title + ' Bali news realistic')}?width=1200&height=800&nologo=true&seed=${seed}`
+                isImageValid = await validateImageUrl(imageUrl)
+            }
+
+            if (!isImageValid) {
+                // Fallback if all fails - use LoremFlickr with keywords
+                const keywords = generated.title.split(' ').slice(0, 2).join(',')
+                const seed = Math.floor(Math.random() * 1000)
+                imageUrl = `https://loremflickr.com/1200/800/${keywords}?lock=${seed}`
+            }
+
             const article = await db.article.create({
                 data: {
                     title: generated.title,
@@ -161,7 +183,7 @@ export async function generateNewsArticles(count: number = 3, authorId: string, 
                     content: generated.content,
                     category,
                     // Use Pollinations AI for reliable image generation based on title
-                    featuredImageUrl: `https://image.pollinations.ai/prompt/${encodeURIComponent(generated.title + ' Bali news realistic')}?width=1200&height=800&nologo=true`,
+                    featuredImageUrl: imageUrl,
                     featuredImageAlt: generated.title,
                     imageSource: 'AI Generated',
                     aiAssisted: true, // Mark as AI-generated

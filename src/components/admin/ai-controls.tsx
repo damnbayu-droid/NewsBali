@@ -351,6 +351,44 @@ export function AiControls({ onSuccess, onError, onRefresh }: AiControlsProps) {
                 </div>
             </div>
 
+            {/* Repair Tools */}
+            <div className="border-t pt-4 space-y-3">
+                <h4 className="font-semibold text-sm flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-yellow-500" />
+                    System Restoration
+                </h4>
+                <div className="flex gap-4">
+                    <Button
+                        variant="outline"
+                        onClick={async () => {
+                            setLoading(true)
+                            try {
+                                const res = await fetch('/api/ai/assistant', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ action: 'repair-all-images' })
+                                })
+                                if (res.ok) {
+                                    onSuccess('✅ Image repair process started. Check terminal.')
+                                    onRefresh()
+                                } else {
+                                    onError('Failed to start repair')
+                                }
+                            } catch (e) {
+                                onError('Error starting repair')
+                            } finally {
+                                setLoading(false)
+                            }
+                        }}
+                        disabled={loading}
+                        className="w-full"
+                    >
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                        🔧 Repair All Broken Images
+                    </Button>
+                </div>
+            </div>
+
             {/* Live Terminal */}
             <div className="border border-slate-700 bg-slate-950 rounded-lg overflow-hidden mt-6">
                 <div className="bg-slate-900 px-4 py-2 border-b border-slate-800 flex items-center justify-between">

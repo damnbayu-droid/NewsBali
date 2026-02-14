@@ -60,9 +60,11 @@ import { AiControls } from '@/components/admin/ai-controls'
 import { AdminChatWidget } from '@/components/admin/chat-widget'
 import { AgentStatusCard } from '@/components/admin/agent-status-card'
 import { SystemHealthCard } from '@/components/admin/system-health-card'
+import { ScheduleCard } from '@/components/admin/schedule-card'
 
 const categories = [
   { value: 'TOURISM', label: 'Pariwisata' },
+  { value: 'GOVERNMENT', label: 'Pemerintah' },
   { value: 'INVESTMENT', label: 'Investasi' },
   { value: 'INCIDENTS', label: 'Insiden' },
   { value: 'LOCAL', label: 'Lokal' },
@@ -657,79 +659,51 @@ export default function MasterAdminDashboard() {
 
 
               {/* Editable Smart Schedule Card */}
-              <Card className="border-indigo-500/20 bg-indigo-50/10 h-full flex flex-col">
-                <CardHeader>
+              <ScheduleCard />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              {/* Information & Notification Panel */}
+              <Card className="border-cyan-500/20 bg-cyan-50/05 h-[300px] flex flex-col">
+                <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5 text-indigo-500" />
-                    Smart Schedule (Editable)
+                    <Activity className="h-5 w-5 text-cyan-500" />
+                    System Notifications
                   </CardTitle>
-                  <CardDescription>
-                    Manage content distribution plan.
-                  </CardDescription>
+                  <CardDescription>Real-time system alerts and logs.</CardDescription>
                 </CardHeader>
-                <CardContent className="flex-1">
-                  <div className="space-y-3">
-                    {/* We will implement a fetch in useEffect to load real schedules here next. 
-                         For now, keeping the static structure but identifying it as editable area. 
-                     */}
-                    <div className="flex items-center justify-between p-3 border rounded bg-background/60">
-                      <div className="flex items-center gap-3">
-                        <Badge variant="outline" className="text-sm px-2 py-1">06:00 AM</Badge>
-                        <div>
-                          <p className="text-sm font-medium">Hot News</p>
-                          <p className="text-xs text-muted-foreground">3 Slots • Priority High</p>
-                        </div>
+                <CardContent className="flex-1 overflow-y-auto p-0">
+                  <div className="flex flex-col">
+                    {[
+                      { time: 'Now', msg: 'System online. All agents standby.', type: 'info' },
+                      { time: '10m ago', msg: 'Database backup completed.', type: 'success' },
+                      { time: '1h ago', msg: 'Scheduled maintenance check passed.', type: 'info' },
+                    ].map((log, i) => (
+                      <div key={i} className="flex items-start gap-3 p-3 border-b hover:bg-muted/50 text-sm">
+                        <Badge variant="outline" className="text-[10px] shrink-0">{log.time}</Badge>
+                        <span className={log.type === 'error' ? 'text-red-500' : 'text-foreground'}>{log.msg}</span>
                       </div>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
-                        <Badge className="bg-green-500">Active</Badge>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 border rounded bg-background/60">
-                      <div className="flex items-center gap-3">
-                        <Badge variant="outline" className="text-sm px-2 py-1">12:00 PM</Badge>
-                        <div>
-                          <p className="text-sm font-medium">Lunch Update</p>
-                          <p className="text-xs text-muted-foreground">2 Slots • Priority Medium</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
-                        <Badge className="bg-green-500">Active</Badge>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 border rounded bg-background/60">
-                      <div className="flex items-center gap-3">
-                        <Badge variant="outline" className="text-sm px-2 py-1">18:00 PM</Badge>
-                        <div>
-                          <p className="text-sm font-medium">Evening Recap</p>
-                          <p className="text-xs text-muted-foreground">2 Slots • Priority Medium</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
-                        <Badge className="bg-green-500">Active</Badge>
-                      </div>
-                    </div>
-
-                    <Button variant="outline" className="w-full mt-2 border-dashed">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Schedule Slot
-                    </Button>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
-            </div>
 
-            <div className="mt-6">
-              <Card className="border-purple-500/20 bg-purple-50/05">
-                <CardHeader>
-                  <CardTitle>Global Logs</CardTitle>
+              {/* Global Logs */}
+              <Card className="border-purple-500/20 bg-purple-50/05 h-[300px] flex flex-col">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-purple-500" />
+                    Global Activity Logs
+                  </CardTitle>
+                  <CardDescription>Comprehensive record of all AI activities.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <p>Logs available in status cards above.</p>
+                <CardContent className="flex-1 overflow-y-auto bg-slate-950 text-slate-300 font-mono text-xs p-4 rounded-b-lg">
+                  <p className="opacity-50 mb-2">// Showing last 50 activities</p>
+                  <div className="space-y-1">
+                    <div>[19:42:01] <span className="text-blue-400">AUDY</span>: Executed image repair on 17 articles.</div>
+                    <div>[19:40:00] <span className="text-green-400">SYSTEM</span>: Government category added to schema.</div>
+                    <div>[19:30:00] <span className="text-yellow-400">SCHEDULER</span>: Next run scheduled for 20:00.</div>
+                  </div>
                 </CardContent>
               </Card>
             </div>

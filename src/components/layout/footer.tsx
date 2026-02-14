@@ -8,6 +8,7 @@ const footerLinks = {
   en: {
     categories: [
       { href: '/category/tourism', label: 'Tourism' },
+      { href: '/category/government', label: 'Government' },
       { href: '/category/investment', label: 'Investment' },
       { href: '/category/incidents', label: 'Incidents' },
       { href: '/category/local', label: 'Local' },
@@ -21,14 +22,15 @@ const footerLinks = {
       { href: '/contact', label: 'Contact' },
     ],
     legal: [
-      { href: '/privacy', label: 'Privacy Policy' },
-      { href: '/terms', label: 'Terms & Conditions' },
+      { href: '/privacy-policy', label: 'Privacy Policy' },
+      { href: '/terms-conditions', label: 'Terms & Conditions' },
       { href: '/editorial-guidelines', label: 'Editorial Guidelines' },
     ],
   },
   id: {
     categories: [
       { href: '/category/tourism', label: 'Pariwisata' },
+      { href: '/category/government', label: 'Pemerintah' },
       { href: '/category/investment', label: 'Investasi' },
       { href: '/category/incidents', label: 'Insiden' },
       { href: '/category/local', label: 'Lokal' },
@@ -42,8 +44,8 @@ const footerLinks = {
       { href: '/contact', label: 'Kontak' },
     ],
     legal: [
-      { href: '/privacy', label: 'Kebijakan Privasi' },
-      { href: '/terms', label: 'Syarat & Ketentuan' },
+      { href: '/privacy-policy', label: 'Kebijakan Privasi' },
+      { href: '/terms-conditions', label: 'Syarat & Ketentuan' },
       { href: '/editorial-guidelines', label: 'Pedoman Editorial' },
     ],
   },

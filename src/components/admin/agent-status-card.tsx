@@ -69,9 +69,18 @@ export function AgentStatusCard() {
                                 </p>
                             </div>
                         </div>
-                        <Badge variant={status[agent.id as keyof AgentStatus] === 'Idle' ? 'outline' : 'secondary'}
-                            className={cn(status[agent.id as keyof AgentStatus] !== 'Idle' && "bg-green-100 text-green-800 border-green-200")}>
-                            {status[agent.id as keyof AgentStatus] === 'Idle' ? 'Standing By' : 'Active'}
+                        <Badge variant={
+                            status[agent.id as keyof AgentStatus] === 'Offline' ? 'destructive' :
+                                (status[agent.id as keyof AgentStatus] === 'Idle' || status[agent.id as keyof AgentStatus] === 'Standby') ? 'secondary' :
+                                    'default'
+                        }
+                            className={cn(
+                                status[agent.id as keyof AgentStatus] !== 'Idle' && status[agent.id as keyof AgentStatus] !== 'Standby' && status[agent.id as keyof AgentStatus] !== 'Offline' && "bg-green-500 hover:bg-green-600",
+                                status[agent.id as keyof AgentStatus] === 'Offline' && "bg-red-500"
+                            )}>
+                            {status[agent.id as keyof AgentStatus] === 'Offline' ? 'Offline' :
+                                (status[agent.id as keyof AgentStatus] === 'Idle' || status[agent.id as keyof AgentStatus] === 'Standby') ? 'Standby' :
+                                    'Online'}
                         </Badge>
                     </div>
                 ))}
