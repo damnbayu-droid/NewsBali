@@ -33,5 +33,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.8,
     }))
 
-    return [...staticRoutes, ...articleRoutes]
+    // 3. Category Routes
+    const categories = ['tourism', 'investment', 'incidents', 'local', 'jobs', 'opinion']
+    const categoryRoutes = categories.map(cat => ({
+        url: `${baseUrl}/category/${cat}`,
+        lastModified: new Date(),
+        changeFrequency: 'daily' as const,
+        priority: 0.9,
+    }))
+
+    return [...staticRoutes, ...categoryRoutes, ...articleRoutes]
 }

@@ -57,43 +57,41 @@ const CATEGORY_GUIDELINES = {
 }
 
 async function generateArticleContent(category: Category): Promise<GeneratedArticle> {
-    const prompt = `You are a professional English journalist writing news articles about Bali, Indonesia.
-
-Generate a realistic news article with the following specifications:
-- Category: ${category}
-- Topic focus: ${CATEGORY_GUIDELINES[category]}
-- Language: English (professional journalism standards)
-- Tone: Neutral, objective, factual
-- Length: 2-3 well-developed paragraphs
-- Location: Bali, Indonesia (use real locations like Denpasar, Ubud, Sanur, Seminyak, Gianyar, Tabanan, etc.)
-
-Requirements:
-1. Create a completely realistic and plausible news story about Bali
-2. Use specific Balinese locations, realistic names (Indonesian names), and believable statistics
-3. Include proper journalistic attribution ("according to...", "officials stated...", "spokesperson announced...")
-4. Write in professional news article format with proper paragraphs
-5. Avoid sensationalism, clickbait, or exaggeration
-6. For OPINION pieces, include a byline like "By: [Name], [Title/Expertise]"
-
-CRITICAL: Return ONLY a valid JSON object with this EXACT structure:
-{
-  "title": "Article title (50-80 characters, clear and informative)",
-  "excerpt": "Brief compelling summary (100-150 characters)",
-  "content": "Full article content in HTML format using <p> tags for each paragraph (2-3 paragraphs)",
-  "riskLevel": "LOW or MEDIUM or HIGH",
-  "verificationLevel": "LOW or MEDIUM or HIGH",
-  "evidenceCount": 0-5
-}
-
-Risk level guidelines:
-- LOW: General news, announcements, positive developments
-- MEDIUM: Incidents, controversies, policy changes
-- HIGH: Major emergencies, scandals, serious accusations
-
-Verification level guidelines:
-- LOW: Opinion pieces, general announcements
-- MEDIUM: Standard news reporting
-- HIGH: Investigative reports, major developments`
+    const prompt = `You are a Senior Investigative Journalist for NewsBali, a prestigious English-language news outlet in Indonesia.
+    
+    TASK: Write a comprehensive, high-quality news article based on REAL or HIGHLY REALISTIC CURRENT TRENDS in Bali.
+    
+    SPECIFICATIONS:
+    - Category: ${category}
+    - Focus: ${CATEGORY_GUIDELINES[category]}
+    - Tone: Professional, Objective, Authoritative, Journalistic (Associated Press style).
+    - Length: LONG FORM (800-1200 words equivalent via sections).
+    - Structure: MUST follow the "Inverted Pyramid" + 5W 1H format.
+    
+    STRICT STRUCTURE (5-7 SECTIONS):
+    1.  **LEAD (The Hook)**: summarises the 5W 1H (Who, What, Where, When, Why, How) in the first paragraph.
+    2.  **THE FACTS (Body)**: Detailed breakdown of the event/topic.
+    3.  **KEY QUOTES**: Include realistic quotes from officials, locals, or experts (e.g., "The Governor of Bali stated...", "Local business owner Wayan...").
+    4.  **BACKGROUND/CONTEXT**: Historical context or what led to this.
+    5.  **IMPACT**: How this affects tourism, economy, or locals.
+    6.  **OPPOSING VIEWS** (if applicable): Balance the story.
+    7.  **CONCLUSION/LOOKING AHEAD**: What happens next.
+    
+    CONTENT RULES:
+    - **REALISM**: Use REAL locations (specific streets in Canggu, offices in Renon, temples, etc.). Use REAL titles of officials (e.g., Governor, Head of Tourism Board).
+    - **NO FAKE NEWS**: Do not invent disasters or crimes unless generating for "INCIDENTS". Focus on factual trends (e.g., Traffic congestion in Canggu, New Visa rules, Investment boom in Uluwatu).
+    - **Formatting**: Use HTML <p> tags for paragraphs, <h3> for section headers to break up the text.
+    
+    CRITICAL: Return ONLY a valid JSON object with this EXACT structure:
+    {
+      "title": "Catchy but Professional Headline (Max 80 characters)",
+      "excerpt": "A powerful summary of the article in 2 sentences.",
+      "content": "The full formatted HTML content. It must be LONG and detailed.",
+      "riskLevel": "LOW or MEDIUM or HIGH",
+      "verificationLevel": "MEDIUM or HIGH",
+      "evidenceCount": 3-5
+    }
+    `
 
     try {
         const openai = new OpenAI({
@@ -101,11 +99,11 @@ Verification level guidelines:
         })
 
         const response = await openai.chat.completions.create({
-            model: 'gpt-4o-mini',
+            model: 'gpt-4o', // Upgraded to 4o for quality
             messages: [
                 {
                     role: 'system',
-                    content: 'You are a professional journalist. Always respond with valid JSON only, no additional text.'
+                    content: 'You are an award-winning journalist. Output strictly valid JSON.'
                 },
                 {
                     role: 'user',
@@ -113,7 +111,7 @@ Verification level guidelines:
                 }
             ],
             response_format: { type: 'json_object' },
-            temperature: 0.8, // Higher creativity for diverse articles
+            temperature: 0.7, // Lower temperature for more factual/grounded output
         })
 
         const result = JSON.parse(response.choices[0].message.content || '{}')

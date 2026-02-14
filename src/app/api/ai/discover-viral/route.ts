@@ -5,13 +5,13 @@ import OpenAI from 'openai'
 // Force dynamic
 export const dynamic = 'force-dynamic'
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-})
-
 export async function POST(req: NextRequest) {
     try {
         const { autoPublish } = await req.json()
+
+        const openai = new OpenAI({
+            apiKey: process.env.WIE_OPENAI_API_KEY,
+        })
 
         // 1. Check last execution time (6-hour window)
         const lastRun = await db.aiActivityLog.findFirst({
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
         const result = JSON.parse(completion.choices[0].message.content || '{}')
         const topics = result.topics || []
 
-        const createdArticles = []
+        const createdArticles: any[] = []
 
         for (const topic of topics) {
             if (!topic.title) continue

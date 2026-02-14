@@ -24,6 +24,31 @@ const nextConfig: NextConfig = {
         hostname: 'picsum.photos',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'image.pollinations.ai',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'gemini.google.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'fal.media',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.blob.core.windows.net',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.googleusercontent.com',
+        pathname: '/**',
+      },
     ],
   },
 };

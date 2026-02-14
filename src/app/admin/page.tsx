@@ -436,20 +436,36 @@ export default function MasterAdminDashboard() {
     router.push('/login')
   }
 
-  const filteredArticles = articles.filter(a =>
-    a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    a.category.toLowerCase().includes(searchQuery.toLowerCase())
-  )
 
-  const filteredComments = comments.filter(c =>
-    c.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.user.email.toLowerCase().includes(searchQuery.toLowerCase())
-  )
 
-  const filteredUsers = users.filter(u =>
-    u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (u.name?.toLowerCase().includes(searchQuery.toLowerCase()))
-  )
+  // Enhanced Search Logic
+  const filteredArticles = articles.filter(a => {
+    const q = searchQuery.toLowerCase()
+    return (
+      a.title.toLowerCase().includes(q) ||
+      a.category.toLowerCase().includes(q) ||
+      a.author?.name?.toLowerCase().includes(q) ||
+      a.status.toLowerCase().includes(q)
+    )
+  })
+
+  const filteredComments = comments.filter(c => {
+    const q = searchQuery.toLowerCase()
+    return (
+      c.content.toLowerCase().includes(q) ||
+      c.user.email.toLowerCase().includes(q) ||
+      c.user.name?.toLowerCase().includes(q)
+    )
+  })
+
+  const filteredUsers = users.filter(u => {
+    const q = searchQuery.toLowerCase()
+    return (
+      u.email.toLowerCase().includes(q) ||
+      u.name?.toLowerCase().includes(q) ||
+      u.role.toLowerCase().includes(q)
+    )
+  })
 
   return (
     <div className="min-h-screen bg-muted/30">

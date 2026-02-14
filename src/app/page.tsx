@@ -13,7 +13,7 @@ async function getLatestArticles() {
   return db.article.findMany({
     where: { status: 'PUBLISHED' },
     orderBy: { publishedAt: 'desc' },
-    take: 6,
+    take: 20, // Increased to 20 for scrollable list
     include: {
       author: { select: { name: true } },
     },
@@ -57,12 +57,25 @@ async function getPublishedCount() {
 }
 
 export default async function HomePage() {
-  const [latestArticles, featuredArticle, tourismArticles, investmentArticles, incidentArticles, totalPublished] = await Promise.all([
+  const [
+    latestArticles,
+    featuredArticle,
+    tourismArticles,
+    investmentArticles,
+    incidentArticles,
+    localArticles,
+    jobsArticles,
+    opinionArticles,
+    totalPublished
+  ] = await Promise.all([
     getLatestArticles(),
     getFeaturedArticle(),
     getArticlesByCategory('TOURISM'),
     getArticlesByCategory('INVESTMENT'),
     getArticlesByCategory('INCIDENTS'),
+    getArticlesByCategory('LOCAL'),
+    getArticlesByCategory('JOBS'),
+    getArticlesByCategory('OPINION'),
     getPublishedCount(),
   ])
 
@@ -76,13 +89,13 @@ export default async function HomePage() {
             <div className="lg:col-span-2">
               {featuredArticle ? (
                 <Link href={`/article/${featuredArticle.slug}`} className="group block">
-                  <div className="relative aspect-[16/9] overflow-hidden rounded-lg bg-muted">
+                  <div className="relative aspect-[16/9] overflow-hidden rounded-lg bg-muted shadow-lg">
                     {featuredArticle.featuredImageUrl ? (
                       <Image
                         src={featuredArticle.featuredImageUrl}
                         alt={featuredArticle.featuredImageAlt || featuredArticle.title}
                         fill
-                        className="object-cover transition-transform group-hover:scale-105"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
                         priority
                       />
                     ) : (
@@ -90,26 +103,26 @@ export default async function HomePage() {
                         <FileText className="h-16 w-16 text-muted-foreground" />
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-6">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
                       <div className="flex items-center gap-2 mb-3">
-                        <Badge variant="secondary" className="bg-primary/90 text-primary-foreground">
+                        <Badge variant="secondary" className="bg-primary/90 text-primary-foreground hover:bg-primary">
                           {categoryLabels[featuredArticle.category]}
                         </Badge>
                         {featuredArticle.aiAssisted && (
-                          <Badge variant="outline" className="bg-background/80 text-foreground">
+                          <Badge variant="outline" className="bg-background/20 text-white border-white/20 backdrop-blur-sm">
                             AI-Assisted
                           </Badge>
                         )}
                       </div>
-                      <h1 className="text-2xl md:text-3xl font-bold text-white mb-2 line-clamp-2">
+                      <h1 className="text-2xl md:text-4xl font-bold text-white mb-3 line-clamp-2 leading-tight">
                         {featuredArticle.title}
                       </h1>
-                      <p className="text-white/80 line-clamp-2 mb-3">
+                      <p className="text-white/80 line-clamp-2 mb-4 text-sm md:text-base max-w-2xl">
                         {featuredArticle.excerpt}
                       </p>
-                      <div className="flex items-center gap-4 text-sm text-white/60">
-                        <span>{featuredArticle.author?.name || 'NewsBali Team'}</span>
+                      <div className="flex items-center gap-4 text-xs md:text-sm text-white/70">
+                        <span className="font-medium text-white">{featuredArticle.author?.name || 'NewsBali Team'}</span>
                         <span>•</span>
                         <span>
                           {featuredArticle.publishedAt?.toLocaleDateString('en-US', {
@@ -129,44 +142,69 @@ export default async function HomePage() {
               )}
             </div>
 
-            {/* Sidebar - Latest News */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-4">
-                <Clock className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-semibold">Latest News</h2>
+            {/* Sidebar - Latest News (Scrollable) */}
+            <div className="flex flex-col h-full bg-background/50 rounded-lg border p-4">
+              <div className="flex items-center justify-between mb-4 sticky top-0 bg-background/50 backdrop-blur-sm py-2 z-10 border-b">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-primary" />
+                  <h2 className="text-lg font-semibold text-primary">Breaking News</h2>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  {latestArticles.length} Updates
+                </Badge>
               </div>
-              {latestArticles.slice(0, 4).map((article) => (
-                <Link
-                  key={article.id}
-                  href={`/article/${article.slug}`}
-                  className="group block p-3 rounded-lg hover:bg-muted transition-colors"
-                >
-                  <div className="flex gap-3">
-                    <div className="relative w-20 h-16 flex-shrink-0 rounded overflow-hidden bg-muted">
-                      {article.featuredImageUrl ? (
-                        <Image
-                          src={article.featuredImageUrl}
-                          alt={article.featuredImageAlt || article.title}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <FileText className="h-6 w-6 text-muted-foreground" />
+
+              <div className="overflow-y-auto h-[500px] pr-2 space-y-4 scrollbar-thin scrollbar-thumb-primary/20 hover:scrollbar-thumb-primary/40">
+                {latestArticles.map((article) => (
+                  <Link
+                    key={article.id}
+                    href={`/article/${article.slug}`}
+                    className="group block p-3 rounded-lg hover:bg-muted/80 transition-all border border-transparent hover:border-border"
+                  >
+                    <div className="flex gap-3">
+                      <div className="relative w-20 h-16 flex-shrink-0 rounded overflow-hidden bg-muted">
+                        {article.featuredImageUrl ? (
+                          <Image
+                            src={article.featuredImageUrl}
+                            alt={article.featuredImageAlt || article.title}
+                            fill
+                            className="object-cover transition-transform group-hover:scale-110"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <FileText className="h-6 w-6 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold line-clamp-2 group-hover:text-primary transition-colors leading-snug">
+                          {article.title}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <Badge variant="secondary" className="text-[10px] h-4 px-1 rounded-sm">
+                            {categoryLabels[article.category]}
+                          </Badge>
+                          <p className="text-[10px] text-muted-foreground">
+                            {article.publishedAt?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </p>
                         </div>
-                      )}
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium line-clamp-2 group-hover:text-primary transition-colors">
-                        {article.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {article.publishedAt?.toLocaleDateString('en-US')}
-                      </p>
-                    </div>
+                  </Link>
+                ))}
+
+                {latestArticles.length === 0 && (
+                  <div className="text-center py-10 text-muted-foreground text-sm">
+                    No breaking news at the moment.
                   </div>
+                )}
+              </div>
+
+              <div className="mt-4 pt-2 border-t">
+                <Link href="/news" className="w-full">
+                  <Button variant="outline" className="w-full">See All News</Button>
                 </Link>
-              ))}
+              </div>
             </div>
           </div>
         </div>
@@ -186,7 +224,7 @@ export default async function HomePage() {
             <div className="flex items-center gap-3 p-4 rounded-lg bg-background/50">
               <FileText className="h-8 w-8 text-primary" />
               <div>
-                <p className="text-2xl font-bold">{totalPublished}+</p>
+                <p className="text-2xl font-bold">{totalPublished}</p>
                 <p className="text-sm text-muted-foreground">Published Articles</p>
               </div>
             </div>
@@ -208,35 +246,68 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Tourism Section */}
-      {tourismArticles.length > 0 && (
-        <CategorySection
-          title="Tourism"
-          category="TOURISM"
-          articles={tourismArticles}
-          viewAllHref="/category/tourism"
-        />
-      )}
+      {/* Categories Feed */}
+      <div className="space-y-8 py-8">
+        {/* Tourism Section */}
+        {tourismArticles.length > 0 && (
+          <CategorySection
+            title="Tourism & Travel"
+            category="TOURISM"
+            articles={tourismArticles}
+            viewAllHref="/category/tourism"
+          />
+        )}
 
-      {/* Investment Section */}
-      {investmentArticles.length > 0 && (
-        <CategorySection
-          title="Investment"
-          category="INVESTMENT"
-          articles={investmentArticles}
-          viewAllHref="/category/investment"
-        />
-      )}
+        {/* Investment Section */}
+        {investmentArticles.length > 0 && (
+          <CategorySection
+            title="Investment & Economy"
+            category="INVESTMENT"
+            articles={investmentArticles}
+            viewAllHref="/category/investment"
+          />
+        )}
 
-      {/* Incidents Section */}
-      {incidentArticles.length > 0 && (
-        <CategorySection
-          title="Incidents"
-          category="INCIDENTS"
-          articles={incidentArticles}
-          viewAllHref="/category/incidents"
-        />
-      )}
+        {/* Incidents Section */}
+        {incidentArticles.length > 0 && (
+          <CategorySection
+            title="Incidents & Safety"
+            category="INCIDENTS"
+            articles={incidentArticles}
+            viewAllHref="/category/incidents"
+          />
+        )}
+
+        {/* Local Section */}
+        {localArticles.length > 0 && (
+          <CategorySection
+            title="Local News & Community"
+            category="LOCAL"
+            articles={localArticles}
+            viewAllHref="/category/local"
+          />
+        )}
+
+        {/* Jobs Section */}
+        {jobsArticles.length > 0 && (
+          <CategorySection
+            title="Jobs & Career"
+            category="JOBS"
+            articles={jobsArticles}
+            viewAllHref="/category/jobs"
+          />
+        )}
+
+        {/* Opinion Section */}
+        {opinionArticles.length > 0 && (
+          <CategorySection
+            title="Opinion & Analysis"
+            category="OPINION"
+            articles={opinionArticles}
+            viewAllHref="/category/opinion"
+          />
+        )}
+      </div>
 
       {/* Submit Report CTA */}
       <section className="bg-primary text-primary-foreground">

@@ -2,11 +2,6 @@ import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth/session'
-import { generateImage } from '@/lib/ai/news-generator'
-
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-})
 
 export async function POST(request: Request) {
     try {
@@ -22,6 +17,10 @@ export async function POST(request: Request) {
         }
 
         // 1. Analyze and Structure with 5W1H
+        const openai = new OpenAI({
+            apiKey: process.env.WIE_OPENAI_API_KEY,
+        })
+
         const completion = await openai.chat.completions.create({
             model: "gpt-4-turbo-preview",
             messages: [

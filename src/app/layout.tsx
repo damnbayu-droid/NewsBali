@@ -12,32 +12,53 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://newsbali.online'),
   title: {
-    default: 'NewsBali Online - Investigative Journalism Platform',
+    default: 'NewsBali Online - Independent Investigative Journalism',
     template: '%s | NewsBali Online',
   },
-  description: 'Platform jurnalisme investigasi independen untuk Bali. Menyajikan berita berbasis bukti dengan standar etika jurnalisme tinggi.',
-  keywords: ['Bali news', 'jurnalisme investigasi', 'berita Bali', 'pariwisata Bali', 'investasi Bali'],
+  description: 'Bali\'s premier independent investigative journalism platform. Delivering evidence-based news on Tourism, Investment, Incidents, and Local affairs in Bali, Indonesia.',
+  keywords: ['Bali news', 'Investigative Journalism', 'Bali Tourism', 'Bali Investment', 'Canggu News', 'Bali Safety', 'Travel Advice Bali', 'NewsBali'],
   authors: [{ name: 'NewsBali Team' }],
+  creator: 'NewsBali Media',
+  publisher: 'NewsBali Media',
   icons: {
     icon: '/Logo.webp',
+    apple: '/Logo.webp',
   },
   openGraph: {
     title: 'NewsBali Online',
     description: 'Investigative Journalism Platform for Bali',
     url: 'https://newsbali.online',
     siteName: 'NewsBali Online',
+    images: [
+      {
+        url: '/opengraph-image', // Dynamic OG Image
+        width: 1200,
+        height: 630,
+        alt: 'NewsBali Online Cover',
+      },
+    ],
     type: 'website',
-    locale: 'id_ID',
+    locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'NewsBali Online',
-    description: 'Investigative Journalism Platform for Bali',
+    description: 'Independent news from Bali, Indonesia.',
+    images: ['/opengraph-image'],
+    creator: '@newsbali',
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 }
 
