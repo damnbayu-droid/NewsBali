@@ -1,129 +1,79 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import OpenAI from 'openai'
-
-// Force dynamic
-export const dynamic = 'force-dynamic'
+import { AGENT_PERSONAS } from '@/lib/ai/gemini-client'
 
 export async function POST(req: NextRequest) {
     try {
-        const { autoPublish } = await req.json()
+        const { category, autoPublish } = await req.json()
 
-        const openai = new OpenAI({
-            apiKey: process.env.WIE_OPENAI_API_KEY,
-        })
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
-        // 1. Check last execution time (6-hour window)
-        const lastRun = await db.aiActivityLog.findFirst({
-            where: { action: 'discover-viral' },
-            orderBy: { createdAt: 'desc' },
-        })
+        // 1. Simulate "Viral Discovery" by asking AI to hallucinate/browse valid trends
+        // In production, we'd fetch Google Trends RSS or Twitter API.
+        // Here, we ask GPT-4o what is trending in Bali/Indonesia right now.
 
-        const now = new Date()
-        const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000)
-
-        // Bypass check if strictly debugging/manual run, but for "Super Smart" mode we respect it
-        // For now, we allow manual trigger to always run, but log the "Traffic Analysis"
-
-        // 2. "Super Smart" Simulation: Analyze "Current Trends"
-        // Since we don't have browsing, we ask AI to simulate based on its knowledge of Bali dynamics
-        const completion = await openai.chat.completions.create({
+        const trendResponse = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
-                {
-                    role: "system",
-                    content: `You are an elite Investigative Journalist AI specialized in Bali, Indonesia. 
-          Your task: SIMULATE a deep search of Twitter, Instagram, Facebook, and Google Trends for the current date/time in Bali.
-          
-          Based on typical patterns (traffic jams in Canggu, ceremonies in Ubud, investment news in Seminyak, crime reports), 
-          GENERATE 3 highly plausible, "Viral" news concepts.
-          
-          Focus on:
-          1. "Real-time" feel (e.g., "Just now", "Breaking").
-          2. Specific locations (e.g., "Jalan Raya Canggu", "Batu Bolong").
-          3. Emotional hook (User outrage, celebration, shock).
-          
-          Return JSON format: { "topics": [ { "title": "...", "category": "..." } ] }
-          Categories: TOURISM, INCIDENTS, LOCAL, INVESTMENT.
-          `
-                },
-                {
-                    role: "user",
-                    content: `Current Time: ${now.toLocaleString('id-ID', { timeZone: 'Asia/Makassar' })}. Find me 3 viral topics.`
-                }
-            ],
-            response_format: { type: "json_object" }
+                { role: "system", content: "You are a trend watcher. Identify a realistic, highly probable VIRAL news topic for Bali, Indonesia right now. It can be about Tourism, Traffic, Culture, or Investment. Output strictly the topic headline." },
+                { role: "user", content: category ? `Find a viral topic in category: ${category}` : "Find any viral topic." }
+            ]
         })
 
-        const result = JSON.parse(completion.choices[0].message.content || '{}')
-        const topics = result.topics || []
+        const trendingTopic = trendResponse.choices[0].message.content || "Bali Tourism Surge"
 
-        const createdArticles: any[] = []
+        // 2. Generate Article based on this trend
+        const response = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+                { role: "system", content: `${AGENT_PERSONAS.WUE.instructions} \n TASK: Write a detailed news article about this trending topic: "${trendingTopic}". Make it dramatic but factual (5W1H). Output JSON: { title, excerpt, content, category, riskLevel }. Content as markdown.` },
+                { role: "user", content: `Topic: ${trendingTopic}` }
+            ]
+        })
 
-        for (const topic of topics) {
-            if (!topic.title) continue
+        const rawJson = response.choices[0].message.content?.replace(/```json/g, '').replace(/```/g, '') || '{}'
+        const articleData = JSON.parse(rawJson)
 
-            // Generate the article content for this topic
-            const contentCompletion = await openai.chat.completions.create({
-                model: "gpt-4o",
-                messages: [
-                    {
-                        role: "system",
-                        content: "You are a senior editor. Write a short, punchy, viral news article (300 words) based on this topic. Use 5W1H format. HTML format."
-                    },
-                    {
-                        role: "user",
-                        content: `Topic: ${topic.title}. Category: ${topic.category}. Context: Bali.`
-                    }
-                ]
-            })
+        // 3. Image
+        const cleanTitle = articleData.title?.substring(0, 50).replace(/[^a-zA-Z0-9 ]/g, '') || 'news'
+        const featuredImageUrl = `https://image.pollinations.ai/prompt/journalistic photo of ${cleanTitle}, bali viral news?seed=${Math.random()}`
 
-            const content = contentCompletion.choices[0].message.content || ''
-            const cleanTitle = topic.title.replace(/[^a-zA-Z0-9 ]/g, '')
+        // 4. Save
+        const slug = articleData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.random().toString(36).substring(7)
 
-            // Create proper title/slug
-            const slug = `viral-${cleanTitle.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`.substring(0, 50)
+        // Map category if needed
+        const cat = category || "LOCAL" // simplify
 
-            const article = await db.article.create({
-                data: {
-                    title: topic.title,
-                    slug,
-                    excerpt: `Viral Alert: ${topic.title}`,
-                    content,
-                    category: topic.category,
-                    status: autoPublish ? 'PUBLISHED' : 'DRAFT',
-                    publishedAt: autoPublish ? new Date() : null,
-                    aiAssisted: true,
-                    riskLevel: 'MEDIUM', // Viral content is usually riskier
-                    featuredImageUrl: `https://image.pollinations.ai/prompt/news photo of ${cleanTitle}, bali context, dramatic, 4k?nologo=true&private=true&enhance=false`,
-                    author: {
-                        connectOrCreate: {
-                            where: { email: 'ai.viral@newsbali.online' },
-                            create: { email: 'ai.viral@newsbali.online', name: 'Viral Hunter AI', role: 'ADMIN' }
-                        }
-                    }
-                }
-            })
-            createdArticles.push(article)
-        }
-
-        // Log Activity
-        await db.aiActivityLog.create({
+        const newArticle = await db.article.create({
             data: {
-                action: 'discover-viral',
-                metadata: {
-                    count: createdArticles.length,
-                    topics: topics.map((t: any) => t.title),
-                    analysis: "Simulated deep search of social media signals."
-                },
-                success: true
+                title: articleData.title,
+                slug: slug,
+                excerpt: articleData.excerpt || "No excerpt",
+                content: articleData.content || "No content",
+                category: cat as any,
+                authorId: (await db.user.findFirst())?.id || "admin",
+                status: autoPublish ? 'PUBLISHED' : 'DRAFT',
+                publishedAt: autoPublish ? new Date() : null,
+                aiAssisted: true,
+                featuredImageUrl,
+                verificationLevel: 'LOW' // Viral is risky
             }
         })
 
-        return NextResponse.json({ success: true, articles: createdArticles })
+        await db.aiActivityLog.create({
+            data: {
+                action: 'discover-viral',
+                articleId: newArticle.id,
+                success: true,
+                metadata: { trendingTopic }
+            }
+        })
 
-    } catch (error) {
+        return NextResponse.json({ success: true, article: newArticle })
+
+    } catch (error: any) {
         console.error('Viral Discovery Error:', error)
-        return NextResponse.json({ success: false, error: 'Failed to discover viral news' }, { status: 500 })
+        return NextResponse.json({ error: error.message }, { status: 500 })
     }
 }

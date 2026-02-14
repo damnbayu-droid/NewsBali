@@ -90,6 +90,7 @@ model Article {
   featuredImageUrl    String?
   featuredImageAlt    String?
   imageSource         String?
+  sourceUrl           String?     // External source URL for rewritten articles
   aiAssisted          Boolean     @default(false)
   riskLevel           RiskLevel   @default(LOW)
   riskScore           Int         @default(0)
@@ -185,6 +186,8 @@ model AiSettings {
   autoPublish     Boolean   @default(false)
   dailyLimit      Int       @default(3)
   lastGeneration  DateTime?
+  agentStatus     Json?     // Real-time status of each agent { "AUDY": "...", "AS": "..." }
+  healthStatus    Json?     // API connection status { "openai": "ok", "db": "ok" }
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

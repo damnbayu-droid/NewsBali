@@ -1,6 +1,6 @@
 'use client'
-
-import { useState, useEffect } from 'react'
+// Force Rebuild
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -58,6 +58,8 @@ import {
 import Image from 'next/image'
 import { AiControls } from '@/components/admin/ai-controls'
 import { AdminChatWidget } from '@/components/admin/chat-widget'
+import { AgentStatusCard } from '@/components/admin/agent-status-card'
+import { SystemHealthCard } from '@/components/admin/system-health-card'
 
 const categories = [
   { value: 'TOURISM', label: 'Pariwisata' },
@@ -602,24 +604,34 @@ export default function MasterAdminDashboard() {
 
 
             {/* AI Assistant & Schedule Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Assistant Admin Card */}
+            {/* AI Assistant & Schedule Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Agent Status Card (Real-time) */}
+              <div className="h-full">
+                <AgentStatusCard />
+              </div>
+
+              {/* System Health Card */}
+              <div className="h-full">
+                <SystemHealthCard />
+              </div>
+
+              {/* Assistant Admin Card (Actions) */}
               <Card className="border-blue-500/20 bg-blue-50/10 h-full">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Brain className="h-5 w-5 text-blue-500" />
-                    Assistant Admin (The Boss)
+                    Assistant Actions
                   </CardTitle>
                   <CardDescription>
-                    Autonomous agent for quality control, repairs, and scheduling.
+                    Trigger autonomous workflows.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="p-3 bg-muted rounded-md text-xs font-mono h-48 overflow-y-auto">
-                    {/* In a real app, this would stream logs. For now we use the alert response or a state */}
-                    <p className="text-muted-foreground italic">System Ready. Run agent to see active logs.</p>
+                  <div className="p-3 bg-muted rounded-md text-xs font-mono h-[140px] overflow-y-auto">
+                    <p className="text-muted-foreground italic">System Ready. Check "Global Logs" for details.</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2">
                     <Button
                       className="w-full bg-blue-600 hover:bg-blue-700"
                       onClick={async () => {
@@ -629,7 +641,7 @@ export default function MasterAdminDashboard() {
                         })
                         const data = await res.json()
                         if (data.success) {
-                          alert(`Assistant ran successfully:\n${data.logs.join('\n')}`)
+                          alert(`Loop Started! Check Status Cards.\n${data.logs.join('\n')}`)
                           fetchAllData()
                         } else {
                           alert('Assistant failed to run')
@@ -642,6 +654,7 @@ export default function MasterAdminDashboard() {
                   </div>
                 </CardContent>
               </Card>
+
 
               {/* Editable Smart Schedule Card */}
               <Card className="border-indigo-500/20 bg-indigo-50/10 h-full flex flex-col">
@@ -710,38 +723,17 @@ export default function MasterAdminDashboard() {
               </Card>
             </div>
 
-            {/* Global AI Logs (Full Width) */}
-            <Card className="border-purple-500/20 bg-purple-50/05">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-purple-500" />
-                  Global AI Logs
-                </CardTitle>
-                <CardDescription>
-                  Real-time activity feed from all AI agents (Generator, Assistant, Viral Hunter).
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-48 overflow-y-auto border rounded-md bg-slate-950 p-4 font-mono text-xs text-slate-300 space-y-2">
-                  {/* Placeholder for real log data fetch */}
-                  <div className="flex gap-2">
-                    <span className="text-slate-500">[10:00:05]</span>
-                    <span className="text-blue-400">ASSISTANT</span>
-                    <span>System check complete. 1 broken image fixed.</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="text-slate-500">[09:45:12]</span>
-                    <span className="text-purple-400">VIRAL_HUNTER</span>
-                    <span>Discovered 3 new viral topics in Bali.</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="text-slate-500">[06:00:01]</span>
-                    <span className="text-green-400">GENERATOR</span>
-                    <span>Published 3 scheduled articles.</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="mt-6">
+              <Card className="border-purple-500/20 bg-purple-50/05">
+                <CardHeader>
+                  <CardTitle>Global Logs</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p>Logs available in status cards above.</p>
+                </CardContent>
+              </Card>
+            </div>
+
 
             {/* Recent Articles (Full Width - Mobile Fix) */}
             <div className="w-full">
@@ -1053,10 +1045,10 @@ export default function MasterAdminDashboard() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent >
+          </TabsContent>
 
           {/* Comments Tab */}
-          < TabsContent value="comments" >
+          <TabsContent value="comments">
             <Card>
               <CardHeader>
                 <CardTitle>Comment Moderation</CardTitle>
@@ -1132,10 +1124,10 @@ export default function MasterAdminDashboard() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent >
+          </TabsContent>
 
           {/* Users Tab */}
-          < TabsContent value="users" >
+          <TabsContent value="users">
             <Card>
               <CardHeader>
                 <CardTitle>User Management</CardTitle>
@@ -1203,10 +1195,10 @@ export default function MasterAdminDashboard() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent >
+          </TabsContent>
 
           {/* AI Control Panel Tab */}
-          < TabsContent value="ai" >
+          <TabsContent value="ai">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -1225,10 +1217,10 @@ export default function MasterAdminDashboard() {
                 />
               </CardContent>
             </Card>
-          </TabsContent >
+          </TabsContent>
 
           {/* Settings Tab */}
-          < TabsContent value="settings" >
+          <TabsContent value="settings">
             <div className="grid gap-6">
               <Card>
                 <CardHeader>
@@ -1352,11 +1344,11 @@ export default function MasterAdminDashboard() {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent >
-        </Tabs >
-      </main >
+          </TabsContent>
+        </Tabs>
+      </main>
 
       <AdminChatWidget onRefresh={fetchAllData} />
-    </div >
+    </div>
   )
 }
