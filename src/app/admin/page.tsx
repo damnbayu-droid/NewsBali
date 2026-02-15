@@ -53,7 +53,8 @@ import {
   Sparkles,
   Brain,
   Zap,
-  Activity
+  Activity,
+  RefreshCw
 } from 'lucide-react'
 import Image from 'next/image'
 import { AiControls } from '@/components/admin/ai-controls'
@@ -441,6 +442,24 @@ export default function MasterAdminDashboard() {
   }
 
 
+  async function handleRepairImage(id: string, title: string) {
+    if (!confirm(`Regenerate image for "${title}"? This will replace the current image.`)) return
+
+    // Optimistic UI or Loading state could be added here
+    setSuccess(`Repairing image for "${title}"...`)
+
+    try {
+      const res = await fetch(`/api/articles/${id}/repair`, { method: 'POST' })
+      const data = await res.json()
+
+      if (!res.ok) throw new Error(data.error || 'Failed to repair image')
+
+      setSuccess('Image repaired successfully!')
+      fetchAllData() // Refresh list to show new image (if we displayed thumbnails)
+    } catch (err) {
+      setError('Failed to repair image')
+    }
+  }
 
   // Enhanced Search Logic
   const filteredArticles = articles.filter(a => {
@@ -453,20 +472,22 @@ export default function MasterAdminDashboard() {
     )
   })
 
+  // Filter Comments
   const filteredComments = comments.filter(c => {
     const q = searchQuery.toLowerCase()
     return (
       c.content.toLowerCase().includes(q) ||
       c.user.email.toLowerCase().includes(q) ||
-      c.user.name?.toLowerCase().includes(q)
+      c.article.title.toLowerCase().includes(q)
     )
   })
 
+  // Filter Users
   const filteredUsers = users.filter(u => {
     const q = searchQuery.toLowerCase()
     return (
-      u.email.toLowerCase().includes(q) ||
       u.name?.toLowerCase().includes(q) ||
+      u.email.toLowerCase().includes(q) ||
       u.role.toLowerCase().includes(q)
     )
   })
@@ -475,281 +496,115 @@ export default function MasterAdminDashboard() {
     <div className="min-h-screen bg-muted/30">
       {/* Header */}
       <header className="bg-background border-b sticky top-0 z-50">
-        <div className="container mx-auto max-w-7xl px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <LayoutDashboard className="h-6 w-6 text-primary" />
-              <div>
-                <h1 className="text-xl font-bold">Master Admin Dashboard</h1>
-                <p className="text-sm text-muted-foreground">NewsBali Online</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <Button variant="outline" size="sm" onClick={() => router.push('/')}>
-                <Eye className="h-4 w-4 mr-2" />
-                View Site
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-            </div>
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <LayoutDashboard className="h-6 w-6 text-primary" />
+            <span className="font-bold text-lg">NewsBali Master</span>
+            <Badge variant="secondary" className="hidden sm:flex ml-2">v2.1.0</Badge>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" asChild>
+              <a href="/" target="_blank" rel="noopener noreferrer">
+                View Site <LinkIcon className="ml-2 h-4 w-4" />
+              </a>
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" /> Logout
+            </Button>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto max-w-7xl px-4 py-6">
-        {/* Alerts */}
+        {/* Quick Stats & Alerts */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <Card>
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Articles</p>
+                <h3 className="text-2xl font-bold">{stats.totalArticles}</h3>
+              </div>
+              <FileText className="h-8 w-8 text-blue-500 opacity-20" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Pending Comments</p>
+                <h3 className="text-2xl font-bold">{stats.pendingComments}</h3>
+              </div>
+              <MessageCircle className="h-8 w-8 text-yellow-500 opacity-20" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">High Risk Articles</p>
+                <h3 className="text-2xl font-bold">{stats.highRiskArticles}</h3>
+              </div>
+              <Shield className="h-8 w-8 text-red-500 opacity-20" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Users</p>
+                <h3 className="text-2xl font-bold">{stats.totalUsers}</h3>
+              </div>
+              <Users className="h-8 w-8 text-green-500 opacity-20" />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* System Health Check */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <SystemHealthCard />
+          <AgentStatusCard />
+          <ScheduleCard />
+        </div>
+
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
+
         {success && (
-          <Alert className="mb-6 border-green-500 bg-green-50">
-            <CheckCircle className="h-4 w-4 text-green-500" />
-            <AlertDescription className="text-green-700">{success}</AlertDescription>
+          <Alert className="mb-6 border-green-200 bg-green-50 text-green-800">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription>{success}</AlertDescription>
           </Alert>
         )}
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 mb-6 h-auto">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">Overview</span>
-            </TabsTrigger>
-            <TabsTrigger value="articles" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Articles</span>
-            </TabsTrigger>
-            <TabsTrigger value="comments" className="flex items-center gap-2">
-              <MessageCircle className="h-4 w-4" />
-              <span className="hidden sm:inline">Comments</span>
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Users</span>
-            </TabsTrigger>
-            <TabsTrigger value="ai" className="gap-2">
-              <Sparkles className="h-4 w-4" />
-              AI Console
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="gap-2">
-              <FileText className="h-4 w-4" />
-              Reports
-              {reports.filter(r => r.status === 'PENDING').length > 0 && (
-                <Badge variant="destructive" className="ml-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]">
-                  {reports.filter(r => r.status === 'PENDING').length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="gap-2">
-              <Settings className="h-4 w-4" />
-              Settings
-            </TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-7 h-auto">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="articles">Articles</TabsTrigger>
+            <TabsTrigger value="comments">Comments</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
+            <TabsTrigger value="ai">AI Center</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <TabsContent value="overview">
+            <div className="grid gap-6">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Articles</CardTitle>
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalArticles}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {stats.publishedArticles} published
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalUsers}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Registered accounts
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pending Comments</CardTitle>
-                  <MessageCircle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.pendingComments}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {stats.totalComments} total comments
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Public Reports</CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{reports.length}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {reports.filter(r => r.status === 'PENDING').length} pending review
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-
-            {/* AI Assistant & Schedule Row */}
-            {/* AI Assistant & Schedule Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Agent Status Card (Real-time) */}
-              <div className="h-full">
-                <AgentStatusCard />
-              </div>
-
-              {/* System Health Card */}
-              <div className="h-full">
-                <SystemHealthCard />
-              </div>
-
-              {/* Assistant Admin Card (Actions) */}
-              <Card className="border-blue-500/20 bg-blue-50/10 h-full">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Brain className="h-5 w-5 text-blue-500" />
-                    Assistant Actions
-                  </CardTitle>
+                  <CardTitle>Welcome back, Admin</CardTitle>
                   <CardDescription>
-                    Trigger autonomous workflows.
+                    Here is what's happening on NewsBali today.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-3 bg-muted rounded-md text-xs font-mono h-[140px] overflow-y-auto">
-                    <p className="text-muted-foreground italic">System Ready. Check "Global Logs" for details.</p>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      className="w-full bg-blue-600 hover:bg-blue-700"
-                      onClick={async () => {
-                        const res = await fetch('/api/ai/assistant', {
-                          method: 'POST',
-                          body: JSON.stringify({ action: 'full-run' })
-                        })
-                        const data = await res.json()
-                        if (data.success) {
-                          alert(`Loop Started! Check Status Cards.\n${data.logs.join('\n')}`)
-                          fetchAllData()
-                        } else {
-                          alert('Assistant failed to run')
-                        }
-                      }}
-                    >
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Run Full Agent Loop
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-
-              {/* Editable Smart Schedule Card */}
-              <ScheduleCard />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-              {/* Information & Notification Panel */}
-              <Card className="border-cyan-500/20 bg-cyan-50/05 h-[300px] flex flex-col">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-cyan-500" />
-                    System Notifications
-                  </CardTitle>
-                  <CardDescription>Real-time system alerts and logs.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1 overflow-y-auto p-0">
-                  <div className="flex flex-col">
-                    {[
-                      { time: 'Now', msg: 'System online. All agents standby.', type: 'info' },
-                      { time: '10m ago', msg: 'Database backup completed.', type: 'success' },
-                      { time: '1h ago', msg: 'Scheduled maintenance check passed.', type: 'info' },
-                    ].map((log, i) => (
-                      <div key={i} className="flex items-start gap-3 p-3 border-b hover:bg-muted/50 text-sm">
-                        <Badge variant="outline" className="text-[10px] shrink-0">{log.time}</Badge>
-                        <span className={log.type === 'error' ? 'text-red-500' : 'text-foreground'}>{log.msg}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Global Logs */}
-              <Card className="border-purple-500/20 bg-purple-50/05 h-[300px] flex flex-col">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-purple-500" />
-                    Global Activity Logs
-                  </CardTitle>
-                  <CardDescription>Comprehensive record of all AI activities.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1 overflow-y-auto bg-slate-950 text-slate-300 font-mono text-xs p-4 rounded-b-lg">
-                  <p className="opacity-50 mb-2">// Showing last 50 activities</p>
-                  <div className="space-y-1">
-                    <div>[19:42:01] <span className="text-blue-400">AUDY</span>: Executed image repair on 17 articles.</div>
-                    <div>[19:40:00] <span className="text-green-400">SYSTEM</span>: Government category added to schema.</div>
-                    <div>[19:30:00] <span className="text-yellow-400">SCHEDULER</span>: Next run scheduled for 20:00.</div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-
-            {/* Recent Articles (Full Width - Mobile Fix) */}
-            <div className="w-full">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Articles</CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-4">
-                  {articles.slice(0, 5).map(article => (
-                    <div key={article.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-muted/50 gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate pr-4">{article.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(article.createdAt).toLocaleDateString('en-GB')}
-                        </p>
-                      </div>
-                      <Badge variant={statusColors[article.status] || 'outline'} className="w-fit">
-                        {article.status}
-                      </Badge>
-                    </div>
-                  ))}
+                <CardContent>
+                  <p>Select a tab to manage content.</p>
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
 
-          {/* Submissions Tab */}
-          <TabsContent value="submissions">
-            <Card>
-              <CardHeader>
-                <CardTitle>Contact Submissions</CardTitle>
-                <CardDescription>Messages from the contact form.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md border p-8 text-center text-muted-foreground">
-                  <p>No new submissions (Database Connected).</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Articles Tab */}
           <TabsContent value="articles">
             <Card>
               <CardHeader>
@@ -927,35 +782,41 @@ export default function MasterAdminDashboard() {
                     </DialogContent>
                   </Dialog>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-4 mt-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Search articles..."
+                      className="pl-8"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
                     />
                   </div>
                 </div>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px] hidden sm:table-cell">Image</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead className="hidden lg:table-cell">Category</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="hidden xl:table-cell">Risk</TableHead>
+                      <TableHead className="hidden xl:table-cell">Views</TableHead>
+                      <TableHead className="hidden lg:table-cell">Created</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredArticles.length === 0 ? (
                       <TableRow>
-                        <TableHead className="w-[100px] hidden sm:table-cell">Image</TableHead>
-                        <TableHead>Title</TableHead>
-                        <TableHead className="hidden lg:table-cell">Category</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="hidden xl:table-cell">Risk</TableHead>
-                        <TableHead className="hidden xl:table-cell">Views</TableHead>
-                        <TableHead className="hidden lg:table-cell">Created</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                          No articles found
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredArticles.map((article) => (
+                    ) : (
+                      filteredArticles.map((article) => (
                         <TableRow key={article.id}>
                           <TableCell className="hidden sm:table-cell">
                             <div className="relative w-16 h-12 rounded overflow-hidden bg-muted">
@@ -981,11 +842,13 @@ export default function MasterAdminDashboard() {
                             <Badge variant="outline">{article.category}</Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={statusColors[article.status]}>{article.status}</Badge>
+                            <Badge variant={statusColors[article.status] ?? 'default'}>
+                              {article.status}
+                            </Badge>
                           </TableCell>
                           <TableCell className="hidden xl:table-cell">
                             <div className="flex items-center gap-2">
-                              <div className={`w-2 h-2 rounded-full ${riskColors[article.riskLevel]}`} />
+                              <div className={`w-2 h-2 rounded-full ${riskColors[article.riskLevel] ?? 'bg-gray-400'}`} />
                               <span className="text-sm">{article.riskScore}</span>
                             </div>
                           </TableCell>
@@ -995,33 +858,41 @@ export default function MasterAdminDashboard() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
-                              <Button size="icon" variant="ghost" onClick={() => openEditArticle(article)}>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleRepairImage(article.id, article.title)}
+                                title="Repair/Regenerate Image"
+                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              >
+                                <RefreshCw className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => openEditArticle(article)}>
                                 <Edit className="h-4 w-4" />
                               </Button>
                               {article.status !== 'PUBLISHED' ? (
-                                <Button size="icon" variant="ghost" onClick={() => handlePublishArticle(article.id)}>
+                                <Button variant="ghost" size="icon" onClick={() => handlePublishArticle(article.id)}>
                                   <Send className="h-4 w-4 text-green-500" />
                                 </Button>
                               ) : (
-                                <Button size="icon" variant="ghost" onClick={() => handlePublishArticle(article.id)}>
+                                <Button variant="ghost" size="icon" onClick={() => handlePublishArticle(article.id)}>
                                   <Eye className="h-4 w-4" />
                                 </Button>
                               )}
-                              <Button size="icon" variant="ghost" onClick={() => handleDeleteArticle(article.id)}>
+                              <Button variant="ghost" size="icon" onClick={() => handleDeleteArticle(article.id)}>
                                 <Trash2 className="h-4 w-4 text-red-500" />
                               </Button>
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Comments Tab */}
           <TabsContent value="comments">
             <Card>
               <CardHeader>
@@ -1100,7 +971,6 @@ export default function MasterAdminDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Users Tab */}
           <TabsContent value="users">
             <Card>
               <CardHeader>
@@ -1171,7 +1041,6 @@ export default function MasterAdminDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Reports Tab - Placeholder for now */}
           <TabsContent value="reports">
             <Card>
               <CardHeader>
@@ -1187,7 +1056,6 @@ export default function MasterAdminDashboard() {
             </Card>
           </TabsContent>
 
-          {/* AI Control Panel Tab */}
           <TabsContent value="ai">
             <Card>
               <CardHeader>
@@ -1209,7 +1077,6 @@ export default function MasterAdminDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Settings Tab */}
           <TabsContent value="settings">
             <div className="grid gap-6">
               <Card>

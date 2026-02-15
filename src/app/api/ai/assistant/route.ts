@@ -291,9 +291,7 @@ export async function POST(req: NextRequest) {
 
             // 2. Iterate ALL Categories (Requested: "All Field will create 2 Article / News Everyday")
             const categories = ['TOURISM', 'GOVERNMENT', 'INVESTMENT', 'INCIDENTS', 'LOCAL', 'JOBS', 'OPINION']
-
-            // In a real automated loop, we would check the time and trigger specific slots.
-            // For now, we simulate the "Daily Planning" by ensuring we have enough DRAFTS/SCHEDULED posts for each.
+            const { generateNewsArticles } = await import('@/lib/ai/news-generator')
 
             for (const cat of categories) {
                 // Check if we have enough coverage for today/tomorrow
@@ -305,12 +303,24 @@ export async function POST(req: NextRequest) {
                 })
 
                 if (existingCount < 2) {
-                    logs.push(`📉 [${cat}] Low coverage (${existingCount}/2). Queuing generation...`)
-                    // We don't trigger the heavy generation here to avoid timeout, 
-                    // but we log it as a priority task for the Agents.
+                    logs.push(`📉 [${cat}] Low coverage (${existingCount}/2). Generating 1 new article...`)
+                    // TRIGGER ACTUAL GENERATION
+                    try {
+                        // Find a valid author (system or admin)
+                        const systemUser = await db.user.findFirst({ where: { role: 'ADMIN' } })
+                        const authorId = systemUser?.id || 'system'
+
+                        await updateAgentStatus('WUE', `Drafting ${cat} article...`, 'Writing')
+                        await generateNewsArticles(1, authorId, 'DRAFT') // Generate 1 DRAFT
+                        logs.push(`✅ [${cat}] Generated new draft.`)
+                    } catch (e) {
+                        logs.push(`❌ [${cat}] Generation failed: ${(e as any).message}`)
+                    }
                 } else {
                     // logs.push(`✅ [${cat}] Daily coverage met.`)
                 }
+                // Short pause to prevent overwhelming the server checks
+                await new Promise(r => setTimeout(r, 500))
             }
 
             logs.push('✅ Schedule analysis complete.')
@@ -323,6 +333,10 @@ export async function POST(req: NextRequest) {
             const agentType = options?.agent || 'AS' // BOSS removed, default to AS
             const cmd = userCommand?.toLowerCase() || ''
 
+            // Dynamic Context Injection
+            const now = new Date()
+            const timeContext = `Current Time: ${now.toLocaleTimeString('en-US', { timeZone: 'Asia/Makassar' })} (Bali Time). Date: ${now.toDateString()}.`
+
             let response = "I'm not sure how to do that yet."
             let agent = "System"
             let messages: { role: string, content: string, agent: string }[] = []
@@ -330,7 +344,7 @@ export async function POST(req: NextRequest) {
             await updateAgentStatus(agentType, 'Processing User Command...', 'Thinking')
 
             // 1. Initialize Clients
-            const { geminiModel, AGENT_PERSONAS } = await import('@/lib/ai/gemini-client')
+            const { AGENT_PERSONAS } = await import('@/lib/ai/gemini-client')
             const OpenAI = (await import('openai')).default
 
             // Default OpenAI (for Wie/General) -> Use WIE key as default since typical OpenAI key is missing
@@ -345,13 +359,16 @@ export async function POST(req: NextRequest) {
             if (options?.ping) {
                 try {
                     // Unified Ping: valid if OpenAI lists models.
-                    // Since we are moving all to OpenAI, we check OpenAI connection for all.
                     if (['AUDY', 'WUE', 'WIE'].includes(agentType)) {
                         await openai.models.list()
                     } else {
                         await asOpenai.models.list()
                     }
-                    await updateAgentStatus(agentType, 'Online', 'Ping Successful')
+                    // Randomize activity for "Dynamic" feel
+                    const activities = ['Reviewing Logs', 'Monitoring Feeds', 'Checking Compliance', 'Organizing Schedule', 'Researching Leads']
+                    const activity = activities[Math.floor(Math.random() * activities.length)]
+
+                    await updateAgentStatus(agentType, 'Online', activity)
                     return NextResponse.json({ success: true, agent: agentType, status: 'online' })
                 } catch (e: any) {
                     await updateAgentStatus(agentType, 'Offline', 'Ping Failed')
@@ -362,11 +379,10 @@ export async function POST(req: NextRequest) {
             // --- AGENT EXECUTION (ALL OPENAI NOW) ---
 
             if (agentType === 'AUDY') {
-                // Audy (Compliance) -> Now OpenAI
                 const completion = await openai.chat.completions.create({
                     model: "gpt-4o",
                     messages: [
-                        { role: "system", content: AGENT_PERSONAS.AUDY.instructions },
+                        { role: "system", content: `${AGENT_PERSONAS.AUDY.instructions} ${timeContext} You are LIVE and DYNAMIC.` },
                         { role: "user", content: userCommand }
                     ]
                 })
@@ -374,11 +390,10 @@ export async function POST(req: NextRequest) {
                 agent = "AUDY"
             }
             else if (agentType === 'AS') {
-                // As (Assistant) -> OpenAI
                 const completion = await asOpenai.chat.completions.create({
                     model: "gpt-4o",
                     messages: [
-                        { role: "system", content: AGENT_PERSONAS.AS.instructions },
+                        { role: "system", content: `${AGENT_PERSONAS.AS.instructions} ${timeContext} You are LIVE and DYNAMIC. Check logs/schedule if asked.` },
                         { role: "user", content: userCommand }
                     ]
                 })
@@ -386,11 +401,10 @@ export async function POST(req: NextRequest) {
                 agent = "AS"
             }
             else if (agentType === 'WIE') {
-                // Wie (Journalist) -> OpenAI
                 const completion = await openai.chat.completions.create({
                     model: "gpt-4o",
                     messages: [
-                        { role: "system", content: AGENT_PERSONAS.WIE.instructions },
+                        { role: "system", content: `${AGENT_PERSONAS.WIE.instructions} ${timeContext} You are LIVE and DYNAMIC.` },
                         { role: "user", content: userCommand }
                     ]
                 })
@@ -398,11 +412,10 @@ export async function POST(req: NextRequest) {
                 agent = "WIE"
             }
             else if (agentType === 'WUE') {
-                // Wue (Reporter) -> Now OpenAI
                 const completion = await openai.chat.completions.create({
                     model: "gpt-4o",
                     messages: [
-                        { role: "system", content: AGENT_PERSONAS.WUE.instructions },
+                        { role: "system", content: `${AGENT_PERSONAS.WUE.instructions} ${timeContext} You are LIVE and DYNAMIC.` },
                         { role: "user", content: userCommand }
                     ]
                 })
@@ -412,65 +425,72 @@ export async function POST(req: NextRequest) {
             else if (agentType === 'GROUP') {
                 // GROUP CHAT: User (Boss) speaks. AS facilitates. AUDY checks.
 
-                // 1. AS (Assistant) responds first
-                const asResponse = await asOpenai.chat.completions.create({
-                    model: "gpt-4o",
-                    messages: [
-                        { role: "system", content: `${AGENT_PERSONAS.AS.instructions} You are facilitating a group meeting for The Boss.` },
-                        { role: "user", content: userCommand }
-                    ]
-                })
-                const asText = asResponse.choices[0].message.content || ""
-                messages.push({ role: 'assistant', content: asText, agent: 'AS' })
+                // CHECK FOR DIRECT MENTION
+                const mentionMatch = userCommand.match(/@(\w+)/i)
+                if (mentionMatch) {
+                    const targetAgent = mentionMatch[1].toUpperCase()
+                    // Only specific agent responds
+                    if (['AUDY', 'AS', 'WIE', 'WUE'].includes(targetAgent)) {
+                        let targetOpenAI = openai
+                        if (targetAgent === 'AS') targetOpenAI = asOpenai
 
-                // 2. AUDY (Auditor) chimes in (OpenAI)
-                try {
-                    const audyResponse = await openai.chat.completions.create({
+                        const completion = await targetOpenAI.chat.completions.create({
+                            model: "gpt-4o",
+                            messages: [
+                                { role: "system", content: `${(AGENT_PERSONAS as any)[targetAgent].instructions} ${timeContext} The Boss mentioned you specifically.` },
+                                { role: "user", content: userCommand }
+                            ]
+                        })
+                        messages.push({ role: 'assistant', content: completion.choices[0].message.content || "Thinking...", agent: targetAgent })
+                    }
+                } else {
+                    // 1. AS (Assistant) responds first (Facilitator)
+                    const asResponse = await asOpenai.chat.completions.create({
                         model: "gpt-4o",
                         messages: [
-                            { role: "system", content: AGENT_PERSONAS.AUDY.instructions },
-                            { role: "user", content: `Context: The Boss said "${userCommand}". As (Assistant) said "${asText}". As Auditor, do you have any short concerns or approvals?` }
+                            { role: "system", content: `${AGENT_PERSONAS.AS.instructions} ${timeContext} Function: Facilitate a transparent group discussion.` },
+                            { role: "user", content: userCommand }
                         ]
                     })
-                    const audyText = audyResponse.choices[0].message.content || ""
-                    messages.push({ role: 'assistant', content: audyText, agent: 'AUDY' })
-                } catch (e) {
-                    messages.push({ role: 'assistant', content: "(Audy is silent/offline)", agent: 'AUDY' })
+                    const asText = asResponse.choices[0].message.content || ""
+                    messages.push({ role: 'assistant', content: asText, agent: 'AS' })
+
+                    // 2. Select another agent to chime in based on keywords
+                    let chimeInAgent = 'WUE' // Default to reporter
+                    if (cmd.includes('risk') || cmd.includes('legal') || cmd.includes('safe')) chimeInAgent = 'AUDY'
+                    if (cmd.includes('deep') || cmd.includes('investigate') || cmd.includes('history')) chimeInAgent = 'WIE'
+
+                    if (chimeInAgent !== 'AS') {
+                        const chimeResponse = await openai.chat.completions.create({
+                            model: "gpt-4o",
+                            messages: [
+                                { role: "system", content: `${(AGENT_PERSONAS as any)[chimeInAgent].instructions} ${timeContext}` },
+                                { role: "user", content: `Context: Boss said "${userCommand}". As said "${asText}". Add your distinct perspective.` }
+                            ]
+                        })
+                        messages.push({ role: 'assistant', content: chimeResponse.choices[0].message.content || "...", agent: chimeInAgent })
+                    }
                 }
 
                 response = "Group processed."
                 agent = "GROUP"
             }
             else {
-                // Default: AS (Assistant) takes generic commands
-                // SPECIAL COMMAND INTERCEPTION FOR REAL DATA (Handled by WUE for Boss)
-                if (cmd.includes('investment') && (cmd.includes('article') || cmd.includes('create'))) {
-                    logs.push('Delegating "Investment Article" to Wue (Gemini)...')
-                    try {
-                        const result = await geminiModel.generateContent(`System: ${AGENT_PERSONAS.WUE.instructions}. Task: Create an investment article using real data for Bali. Output JSON.`)
-                        response = "I've asked Wue to handle this. " + result.response.text()
-                        agent = "AS" // As reports the result
-                    } catch (e) {
-                        response = "I tried to get Wue to do it, but he's offline."
-                        agent = "AS"
-                    }
-                } else {
-                    // Fallback to AS
-                    const completion = await asOpenai.chat.completions.create({
-                        model: "gpt-4o",
-                        messages: [
-                            { role: "system", content: AGENT_PERSONAS.AS.instructions },
-                            { role: "user", content: userCommand }
-                        ]
-                    })
-                    response = completion.choices[0].message.content || "I didn't catch that."
-                    agent = "AS"
-                }
+                // Fallback to AS
+                const completion = await asOpenai.chat.completions.create({
+                    model: "gpt-4o",
+                    messages: [
+                        { role: "system", content: `${AGENT_PERSONAS.AS.instructions} ${timeContext}` },
+                        { role: "user", content: userCommand }
+                    ]
+                })
+                response = completion.choices[0].message.content || "I didn't catch that."
+                agent = "AS"
             }
             // AFTER Response
             await updateAgentStatus(agentType, 'Idle', 'Standing By') // You might want to leave last status visible for a bit
 
-            return NextResponse.json({ success: true, response, agent, logs })
+            return NextResponse.json({ success: true, response, agent, messages, logs })
         }
 
         return NextResponse.json({ success: true, logs })

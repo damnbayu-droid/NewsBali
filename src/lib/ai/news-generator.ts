@@ -98,7 +98,7 @@ async function generateArticleContent(category: Category): Promise<GeneratedArti
 
     try {
         const openai = new OpenAI({
-            apiKey: process.env.OPENAI_API_KEY,
+            apiKey: process.env.WIE_OPENAI_API_KEY || process.env.OPENAI_API_KEY,
         })
 
         const response = await openai.chat.completions.create({
@@ -157,22 +157,28 @@ export async function generateNewsArticles(count: number = 3, authorId: string, 
             const publishedAt = new Date(Date.now() - hoursAgo * 3600000)
 
             // Validate Image Logic
-            let imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(generated.title + ' Bali news realistic')}?width=1200&height=800&nologo=true`
+            // Clean title for better prompts
+            const cleanTitle = generated.title.substring(0, 60).replace(/[^a-zA-Z0-9 ]/g, '')
+            const seed = Math.floor(Math.random() * 100000)
+
+            // Primary: Pollinations (High Quality)
+            let imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent('journalistic photo ' + cleanTitle + ', bali context, realistic, 4k')}?width=1200&height=800&nologo=true&seed=${seed}`
             let isImageValid = await validateImageUrl(imageUrl)
             let imageAttempts = 0
 
-            while (!isImageValid && imageAttempts < 3) {
+            // Retry Pollinations with simpler prompt
+            while (!isImageValid && imageAttempts < 2) {
                 imageAttempts++
-                const seed = Math.floor(Math.random() * 10000)
-                imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(generated.title + ' Bali news realistic')}?width=1200&height=800&nologo=true&seed=${seed}`
+                const retrySeed = Math.floor(Math.random() * 100000)
+                imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent('bali news ' + cleanTitle)}?width=1200&height=800&nologo=true&seed=${retrySeed}`
                 isImageValid = await validateImageUrl(imageUrl)
             }
 
+            // Fallback: LoremFlickr (Reliable)
             if (!isImageValid) {
-                // Fallback if all fails - use LoremFlickr with keywords
-                const keywords = generated.title.split(' ').slice(0, 2).join(',')
-                const seed = Math.floor(Math.random() * 1000)
+                const keywords = cleanTitle.split(' ').slice(0, 2).join(',')
                 imageUrl = `https://loremflickr.com/1200/800/${keywords}?lock=${seed}`
+                // Assume LoremFlickr is valid or let next validation catch it, but usually it works
             }
 
             const article = await db.article.create({
